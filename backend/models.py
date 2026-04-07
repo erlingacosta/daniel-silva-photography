@@ -16,6 +16,7 @@ class User(Base):
     full_name = Column(String)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    role = Column(String, default="user")  # user, admin
     created_at = Column(DateTime, default=datetime.utcnow)
     
     bookings = relationship("Booking", back_populates="client")
@@ -72,11 +73,13 @@ class Booking(Base):
     total_price = Column(Float)
     deposit_paid = Column(Boolean, default=False)
     payment_intent_id = Column(String, nullable=True)
+    deliverables_ready = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     client = relationship("User", back_populates="bookings")
     package = relationship("ServicePackage", back_populates="bookings")
+    invoices = relationship("Invoice", back_populates="booking")
 
 class Inquiry(Base):
     __tablename__ = "inquiries"
@@ -93,6 +96,22 @@ class Inquiry(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     sender = relationship("User", back_populates="inquiries")
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"))
+    invoice_number = Column(String, unique=True, index=True)
+    amount = Column(Float)
+    status = Column(String, default="draft")  # draft, sent, paid, overdue, cancelled
+    due_date = Column(DateTime, nullable=True)
+    paid_date = Column(DateTime, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    booking = relationship("Booking", back_populates="invoices")
 
 class NewsletterSubscriber(Base):
     __tablename__ = "newsletter_subscribers"
