@@ -24,5 +24,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
 
-# Run application
-CMD ["python", "main.py"]
+# Run startup script to create admin user, then start app
+CMD python create_admin.py && python main.py
