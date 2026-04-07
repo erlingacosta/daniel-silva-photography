@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import shutil
 
-from database import get_db, init_db
+from database import get_db
 from models import Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
 
 load_dotenv()
@@ -25,12 +25,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize database on startup
-@app.on_event("startup")
-def startup():
-    init_db()
-    print("✓ Database initialized")
 
 # Health check endpoints
 @app.get("/health")
