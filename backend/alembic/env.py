@@ -3,6 +3,12 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 import os
+import sys
+from pathlib import Path
+
+# Add parent directory to path so we can import models
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from models import Base
 
 # This is the Alembic Config object
