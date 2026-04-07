@@ -1,3 +1,21 @@
+# Build stage - compile Next.js
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source
+COPY . .
+
+# Build Next.js application
+RUN npm run build
+
+# Production stage - serve the built app
 FROM node:18-alpine
 
 WORKDIR /app
@@ -5,16 +23,15 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including devDependencies for build)
-RUN npm install
+# Install only production dependencies (plus next for running)
+RUN npm install --omit=dev && npm install next
 
-# Copy source code
-COPY . .
-
-# Build Next.js app
-RUN npm run build || true
+# Copy built application from builder
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/src ./src
 
 EXPOSE 3000
 
-# Run dev server with direct path to next binary
-CMD ["node", "node_modules/.bin/next", "dev", "-p", "3000"]
+# Start Next.js in production mode
+CMD ["npx", "next", "start", "-p", "3000"]
