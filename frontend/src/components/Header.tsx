@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
+import LogoCircle from './LogoCircle'
 import { siteConfig } from '@/config/site'
 
 export default function Header() {
@@ -38,14 +39,7 @@ export default function Header() {
       <nav className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <Image
-            src="/logo.jpg"
-            alt="Daniel Silva Photography"
-            width={220}
-            height={80}
-            className="h-16 w-auto md:h-24 object-contain"
-            priority
-          />
+          <LogoCircle width={80} height={80} className="md:scale-150 origin-left" priority />
         </Link>
 
         {/* Desktop Menu */}

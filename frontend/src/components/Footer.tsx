@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import LogoCircle from './LogoCircle'
 import { siteConfig } from '@/config/site'
 
 export default function Footer() {
@@ -15,13 +16,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="mb-4">
-              <Image
-                src="/logo.jpg"
-                alt="Daniel Silva Photography"
-                width={220}
-                height={80}
-                className="h-20 w-auto object-contain"
-              />
+              <LogoCircle width={90} height={90} />
             </div>
             <p className="text-sm leading-relaxed" style={{ color: '#666666' }}>
               Premium photography for life's most important moments.
