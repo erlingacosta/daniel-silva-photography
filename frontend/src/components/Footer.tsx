@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { siteConfig } from '@/config/site'
 
 export default function Footer() {
@@ -13,7 +14,15 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div>
-            <div className="djs-logo mb-4">{siteConfig.branding.logoText}</div>
+            <div className="mb-4">
+              <Image
+                src="/logo.jpg"
+                alt="Daniel Silva Photography"
+                width={180}
+                height={54}
+                className="h-14 w-auto object-contain"
+              />
+            </div>
             <p className="text-sm leading-relaxed" style={{ color: '#666666' }}>
               Premium photography for life's most important moments.
             </p>

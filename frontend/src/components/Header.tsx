@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { siteConfig } from '@/config/site'
 
@@ -36,8 +37,15 @@ export default function Header() {
     >
       <nav className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         {/* Logo */}
-        <Link href="/" className="djs-logo">
-          {siteConfig.branding.logoText}
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.jpg"
+            alt="Daniel Silva Photography"
+            width={160}
+            height={48}
+            className="h-10 w-auto md:h-12 object-contain"
+            priority
+          />
         </Link>
 
         {/* Desktop Menu */}

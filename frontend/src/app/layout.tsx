@@ -5,7 +5,8 @@ export const metadata: Metadata = {
   title: 'Daniel Silva Photography | Premium Wedding & Event Photography',
   description: 'Premium photography services for weddings, quinceañeras, events, and portraits.',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/logo.jpg',
+    apple: '/logo.jpg',
   },
 }
 
