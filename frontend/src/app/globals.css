@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #ffffff;
+  color: #1a1a2e;
+}
+
+.djs-logo {
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #D4AF37;
+  background-color: #000000;
+  padding: 1rem 2rem;
+  border-radius: 0.25rem;
+}
+
+.hero {
+  position: relative;
+  height: 100vh;
+  background-color: #000000;
+  overflow: hidden;
+}
+
+.hero-carousel {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.hero-slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+}
+
+.hero-slide.active {
+  opacity: 1;
+}
+
+.hero-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.gallery-item {
+  position: relative;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.gallery-item:hover {
+  transform: scale(1.05);
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.lightbox-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+}
+
+.lightbox-content img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.button {
+  @apply px-6 py-3 font-semibold rounded transition-all duration-200;
+}
+
+.button-primary {
+  @apply bg-gold text-black hover:bg-yellow-500;
+}
+
+.button-secondary {
+  @apply border-2 border-gold text-gold hover:bg-gold hover:text-black;
+}
+
+.button-dark {
+  @apply bg-black text-gold hover:bg-gray-900;
+}
+
+.section-title {
+  @apply text-4xl font-bold text-center mb-12 text-gray-900;
+}
+
+.section-subtitle {
+  @apply text-lg text-gray-600 text-center mb-8;
+}
+
+form input,
+form textarea,
+form select {
+  @apply w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold;
+}
+
+form label {
+  @apply block text-sm font-semibold text-gray-700 mb-2;
+}
+
+.pricing-card {
+  @apply border border-gray-200 rounded-lg p-8 text-center hover:shadow-lg transition-shadow;
+}
+
+.pricing-card.featured {
+  @apply border-gold bg-gray-50;
+}

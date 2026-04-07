@@ -1,0 +1,12 @@
+DANIEL SILVA PHOTOGRAPHY - FINAL LOGO
+
+Design Specification:
+- Main text: "DANIEL SILVA" (gold serif, all caps, ~60-70pt)
+- Icon: Small elegant camera icon (gold line art, centered above text)
+- Tagline: "Photography" (script font, gold, ~30-35pt, below main text)
+- Background: Black (primary)
+- Colors: Gold (#D4AF37 or similar), Black, White (background option)
+- Style: Luxury, minimal, elegant, professional
+- Usage: Website header, business cards, Instagram profile, print materials
+
+This is the locked-in design for Daniel Silva Photography premium brand positioning.
