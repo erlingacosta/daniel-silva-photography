@@ -1,11 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+import json
+from pathlib import Path
 
 from database import get_db
 from models import Booking, User, Invoice, Inquiry
 from schemas import BookingResponse, InvoiceResponse
 from routers.auth import get_current_user
+
+ABOUT_FILE = Path(__file__).parent.parent / "about_data.json"
+
+DEFAULT_ABOUT = {
+    "photo_url": "/images/daniel-silva.jpg",
+    "bio_heading": "Premium Photography",
+    "bio_since": "Since 2009",
+    "bio_paragraphs": [
+        "Daniel Silva is a passionate photographer dedicated to capturing life's most important moments. With over 15 years of experience, he specializes in wedding, quinceañera, and event photography.",
+        "His approach combines technical expertise with artistic vision, ensuring every photo tells a story. Daniel believes in building genuine relationships with clients to understand and deliver on their unique vision.",
+        "When not behind the camera, Daniel mentors emerging photographers and explores new locations for stunning backdrops across the Southwest.",
+    ],
+    "stats": [
+        {"value": "500+", "label": "Events Photographed"},
+        {"value": "15+", "label": "Years of Experience"},
+        {"value": "100%", "label": "Client Satisfaction"},
+    ],
+}
 
 router = APIRouter()
 
@@ -104,6 +124,30 @@ async def mark_booking_complete(
     db.refresh(booking)
     
     return BookingResponse.model_validate(booking)
+
+@router.get("/about")
+async def get_about_data(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get about section data"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if ABOUT_FILE.exists():
+        return json.loads(ABOUT_FILE.read_text())
+    return DEFAULT_ABOUT
+
+@router.put("/about")
+async def update_about_data(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update about section data"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    ABOUT_FILE.write_text(json.dumps(data, indent=2))
+    return {"message": "About section updated successfully"}
 
 @router.get("/reports/revenue")
 async def get_revenue_report(

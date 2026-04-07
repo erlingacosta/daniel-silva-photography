@@ -51,7 +51,7 @@ export default function About() {
               style={{ borderBottom: '2px solid #d4af37', borderRight: '2px solid #d4af37' }}
             />
             <img
-              src="/images/about-daniel.jpg"
+              src="/images/daniel-silva.jpg"
               alt="Daniel Silva"
               className="rounded-lg w-full relative z-10"
               style={{ filter: 'brightness(0.9) contrast(1.05)' }}

@@ -1,4 +1,5 @@
 import os
+import json
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -8,7 +9,7 @@ import shutil
 
 from database import get_db
 from models import Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
-from routers import auth
+from routers import auth, admin
 
 load_dotenv()
 
@@ -29,6 +30,9 @@ app.add_middleware(
 
 # Auth router
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+
+# Admin router
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
 # Root route
 @app.get("/")
@@ -73,6 +77,29 @@ def create_portfolio(title: str, description: str, category: str, image_url: str
     db.commit()
     db.refresh(portfolio)
     return {"id": portfolio.id, "title": portfolio.title, "category": portfolio.category}
+
+@app.put("/api/portfolios/{portfolio_id}")
+def update_portfolio(portfolio_id: int, data: dict, db: Session = Depends(get_db)):
+    portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    for field in ("title", "description", "category", "image_url"):
+        if field in data:
+            setattr(portfolio, field, data[field])
+    if "image_url" in data:
+        portfolio.thumbnail_url = data["image_url"]
+    db.commit()
+    db.refresh(portfolio)
+    return {"id": portfolio.id, "title": portfolio.title, "category": portfolio.category}
+
+@app.delete("/api/portfolios/{portfolio_id}")
+def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
+    portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    db.delete(portfolio)
+    db.commit()
+    return {"message": "Deleted successfully", "id": portfolio_id}
 
 # Testimonials endpoints
 @app.get("/api/testimonials")
