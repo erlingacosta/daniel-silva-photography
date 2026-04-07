@@ -1,48 +1,78 @@
 name: daniel-silva-photography
-services:
-- name: backend
-  github:
-    repo: erlingacosta/daniel-silva-photography
-    branch: main
-  source_dir: backend
-  http_port: 8000
-  build_command: pip install -r requirements.txt
-  run_command: python main.py
-  envs:
-  - key: DATABASE_URL
-    value: ${db.username}:${db.password}@${db.host}:${db.port}/${db.database}
-  - key: SECRET_KEY
-    value: ${SECRET_KEY}
-  - key: STRIPE_SECRET_KEY
-    value: ${STRIPE_SECRET_KEY}
-  - key: STRIPE_PUBLISHABLE_KEY
-    value: ${STRIPE_PUBLISHABLE_KEY}
-  - key: SENDGRID_API_KEY
-    value: ${SENDGRID_API_KEY}
-  - key: SENDGRID_FROM_EMAIL
-    value: contact@danielsilva.photo
-  - key: CORS_ORIGINS
-    value: https://${frontend.domains[0]}
-  - key: DEBUG
-    value: "False"
-  health_check:
-    http_path: /health
-  http_port: 8000
+region: nyc
 
-- name: frontend
-  github:
-    repo: erlingacosta/daniel-silva-photography
-    branch: main
-  source_dir: frontend
-  build_command: npm install && npm run build
-  run_command: npm start
-  envs:
-  - key: NEXT_PUBLIC_API_URL
-    value: https://${backend.domains[0]}
-  http_port: 3000
+ingress:
+  rules:
+    - component:
+        name: backend
+      match:
+        path:
+          prefix: /api
+    - component:
+        name: backend
+      match:
+        path:
+          prefix: /docs
+    - component:
+        name: backend
+      match:
+        path:
+          prefix: /openapi.json
+    - component:
+        name: frontend
+      match:
+        path:
+          prefix: /
+
+services:
+  - name: backend
+    github:
+      repo: erlingacosta/daniel-silva-photography
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+    build_command: pip install -r requirements.txt
+    run_command: python main.py
+    http_port: 8000
+    instance_count: 2
+    instance_size_slug: apps-s-1vcpu-1gb
+    envs:
+      - key: DATABASE_URL
+        value: postgresql://${db.username}:${db.password}@${db.host}:${db.port}/${db.database}
+      - key: SECRET_KEY
+        value: ${SECRET_KEY}
+      - key: STRIPE_SECRET_KEY
+        value: ${STRIPE_SECRET_KEY}
+      - key: STRIPE_PUBLISHABLE_KEY
+        value: ${STRIPE_PUBLISHABLE_KEY}
+      - key: SENDGRID_API_KEY
+        value: ${SENDGRID_API_KEY}
+      - key: SENDGRID_FROM_EMAIL
+        value: contact@danielsilva.photo
+      - key: CORS_ORIGINS
+        value: https://${app.domain}
+      - key: DEBUG
+        value: "False"
+    health_check:
+      http_path: /health
+
+  - name: frontend
+    github:
+      repo: erlingacosta/daniel-silva-photography
+      branch: main
+      deploy_on_push: true
+    source_dir: frontend
+    build_command: npm install && npm run build
+    run_command: npm start
+    http_port: 3000
+    instance_count: 2
+    instance_size_slug: apps-s-1vcpu-1gb
+    envs:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://${app.domain}/api
 
 databases:
-- name: db
-  engine: PG
-  version: "16"
-  production: true
+  - name: db
+    engine: PG
+    version: "16"
+    production: true
