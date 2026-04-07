@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -9,8 +10,14 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 bg-black text-white z-40 shadow-lg">
       <nav className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="djs-logo text-2xl font-bold">
-          DJS
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/djs-logo.png"
+            alt="DJS Photography"
+            width={40}
+            height={40}
+            className="h-10 w-10"
+          />
         </Link>
 
         {/* Desktop Menu */}
