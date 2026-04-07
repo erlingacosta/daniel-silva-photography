@@ -16,5 +16,5 @@ RUN npm run build || true
 
 EXPOSE 3000
 
-# Use next start which doesn't require npm
-CMD ["npx", "next", "start"]
+# Run dev server (includes rebuilding)
+CMD ["npm", "run", "dev", "--", "-p", "3000"]
