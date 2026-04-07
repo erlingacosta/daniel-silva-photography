@@ -16,5 +16,5 @@ RUN npm run build || true
 
 EXPOSE 3000
 
-# Run dev server (includes rebuilding)
-CMD ["npm", "run", "dev", "--", "-p", "3000"]
+# Run dev server with direct path to next binary
+CMD ["node", "node_modules/.bin/next", "dev", "-p", "3000"]
