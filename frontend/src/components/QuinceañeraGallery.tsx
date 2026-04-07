@@ -6,23 +6,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const images = [
   {
-    src: '/images/quinceañera/quince-01.jpg',
+    src: '/images/quinceanera/quince-01.jpg',
     alt: 'Quinceañera in golden field with sparkly gown',
   },
   {
-    src: '/images/quinceañera/quince-02.jpg',
+    src: '/images/quinceanera/quince-02.jpg',
     alt: 'Quinceañera glamour shot by rocks with bouquet',
   },
   {
-    src: '/images/quinceañera/quince-03.jpg',
+    src: '/images/quinceanera/quince-03.jpg',
     alt: 'Quinceañera with floral backdrop in white gown',
   },
   {
-    src: '/images/quinceañera/quince-04.jpg',
+    src: '/images/quinceanera/quince-04.jpg',
     alt: 'Quinceañera in sparkly red dress by cactus',
   },
   {
-    src: '/images/quinceañera/quince-05.jpg',
+    src: '/images/quinceanera/quince-05.jpg',
     alt: 'Quinceañera in pale blue gown in forest',
   },
 ]
