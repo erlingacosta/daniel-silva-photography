@@ -1,34 +1,6 @@
 name: daniel-silva-photography
 region: nyc
 
-ingress:
-  rules:
-    - component:
-        name: frontend
-      match:
-        path:
-          prefix: /
-    - component:
-        name: backend
-      match:
-        path:
-          prefix: /api
-    - component:
-        name: backend
-      match:
-        path:
-          prefix: /health
-    - component:
-        name: backend
-      match:
-        path:
-          prefix: /docs
-    - component:
-        name: backend
-      match:
-        path:
-          prefix: /openapi.json
-
 services:
   - name: backend
     github:
