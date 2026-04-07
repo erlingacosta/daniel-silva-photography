@@ -8,6 +8,7 @@ import shutil
 
 from database import get_db
 from models import Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
+from routers import auth
 
 load_dotenv()
 
@@ -25,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Auth router
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 
 # Root route
 @app.get("/")

@@ -10,43 +10,65 @@ const portfolio = [
     id: 1,
     title: 'Wedding Ceremony & First Dance',
     category: 'Weddings',
-    type: 'video',
-    src: '/videos/01_wedding_ceremony_first_dance.mp4',
+    type: 'image' as const,
+    src: '/images/wedding-ceremony-still.jpg',
+    cinematic: false,
   },
   {
     id: 2,
-    title: 'Quinceañera Glamour Reel',
+    title: 'Quinceañera — Golden Hour',
     category: 'Quinceañeras',
-    type: 'video',
-    src: '/videos/02_quinceañera_glamour.mp4',
+    type: 'image' as const,
+    src: '/images/quinceanera-still-1.jpg',
+    cinematic: true,
   },
   {
     id: 3,
-    title: 'Event Photography Highlights',
-    category: 'Events',
-    type: 'video',
-    src: '/videos/03_event_highlights.mp4',
+    title: 'Quinceañera — Glamour Close-Up',
+    category: 'Quinceañeras',
+    type: 'image' as const,
+    src: '/images/quinceanera-still-2.jpg',
+    cinematic: true,
   },
   {
     id: 4,
-    title: 'Cinematic Portrait Session',
-    category: 'Portraits',
-    type: 'video',
-    src: '/videos/04_portrait_cinematic.mp4',
+    title: 'Event Photography Highlights',
+    category: 'Events',
+    type: 'image' as const,
+    src: '/images/event-highlights-still.jpg',
+    cinematic: false,
   },
   {
     id: 5,
-    title: 'La Hacienda Wedding',
-    category: 'Weddings',
-    type: 'image',
-    src: '/images/wedding-2.jpg',
+    title: 'Cinematic Portrait — Natural Light',
+    category: 'Portraits',
+    type: 'image' as const,
+    src: '/images/portrait-cinematic-still-1.jpg',
+    cinematic: true,
   },
   {
     id: 6,
+    title: 'Cinematic Portrait — Studio',
+    category: 'Portraits',
+    type: 'image' as const,
+    src: '/images/portrait-cinematic-still-2.jpg',
+    cinematic: true,
+  },
+  {
+    id: 7,
+    title: 'La Hacienda Wedding',
+    category: 'Weddings',
+    type: 'image' as const,
+    src: '/images/wedding-2.jpg',
+    cinematic: false,
+  },
+  {
+    id: 8,
     title: 'Family Portrait Collection',
     category: 'Portraits',
-    type: 'image',
+    type: 'image' as const,
     src: '/images/portrait-2.jpg',
+    cinematic: false,
   },
 ]
 
@@ -64,6 +86,106 @@ const cardVariants = {
 
 type PortfolioItem = typeof portfolio[0]
 
+function CinematicCard({ item, onClick }: { item: PortfolioItem; onClick: () => void }) {
+  return (
+    <motion.div
+      variants={cardVariants}
+      className="gallery-item group cursor-pointer overflow-hidden"
+      onClick={onClick}
+      style={{ position: 'relative' }}
+    >
+      {/* Cinematic zoom on hover via CSS transform */}
+      <motion.div
+        className="w-full h-full"
+        whileHover={{ scale: 1.08 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        style={{ transformOrigin: 'center center' }}
+      >
+        <img
+          src={item.src}
+          alt={item.title}
+          className="w-full h-full object-cover"
+          style={{ display: 'block' }}
+        />
+      </motion.div>
+
+      {/* Gold shimmer overlay on hover */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        initial={{ opacity: 0 }}
+        whileHover={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, transparent 50%, rgba(212,175,55,0.05) 100%)',
+        }}
+      />
+
+      {/* Hover info overlay */}
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }}
+      >
+        <span
+          className="text-xs uppercase tracking-widest mb-2"
+          style={{ color: '#d4af37', letterSpacing: '0.2em' }}
+        >
+          {item.category}
+        </span>
+        <p className="text-white text-center font-semibold text-sm">{item.title}</p>
+        <p className="text-xs mt-2 uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.6)' }}>
+          ⊕ View
+        </p>
+      </div>
+
+      {/* Cinematic badge */}
+      <div
+        className="absolute top-3 left-3 px-2 py-1 text-xs uppercase tracking-widest"
+        style={{
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          border: '1px solid rgba(212,175,55,0.4)',
+          color: '#d4af37',
+          letterSpacing: '0.15em',
+          fontSize: '9px',
+        }}
+      >
+        Cinematic
+      </div>
+    </motion.div>
+  )
+}
+
+function StandardCard({ item, onClick }: { item: PortfolioItem; onClick: () => void }) {
+  return (
+    <motion.div
+      variants={cardVariants}
+      className="gallery-item group cursor-pointer"
+      onClick={onClick}
+      whileHover={{ scale: 1.01 }}
+      style={{ position: 'relative' }}
+    >
+      <img src={item.src} alt={item.title} className="w-full h-full object-cover" />
+
+      {/* Hover overlay */}
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }}
+      >
+        <span
+          className="text-xs uppercase tracking-widest mb-2"
+          style={{ color: '#d4af37', letterSpacing: '0.2em' }}
+        >
+          {item.category}
+        </span>
+        <p className="text-white text-center font-semibold text-sm">{item.title}</p>
+        <p className="text-xs mt-2 uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.6)' }}>
+          ⊕ View
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
 export default function Portfolio() {
   const [activeCategory, setActiveCategory] = useState('All')
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -78,6 +200,13 @@ export default function Portfolio() {
     setSelected(item)
     setLightboxOpen(true)
   }
+
+  // For Quinceañeras category, show side-by-side pair at top
+  const quincItems = filtered.filter((i) => i.category === 'Quinceañeras')
+  const showQuincPair = activeCategory === 'Quinceañeras' && quincItems.length >= 2
+  const otherItems = showQuincPair
+    ? filtered.filter((i) => i.category !== 'Quinceañeras')
+    : filtered
 
   return (
     <section id="portfolio" className="py-24" style={{ backgroundColor: '#0f0f0f' }}>
@@ -123,6 +252,32 @@ export default function Portfolio() {
           ))}
         </motion.div>
 
+        {/* Quinceañera side-by-side cinematic pair */}
+        <AnimatePresence>
+          {showQuincPair && (
+            <motion.div
+              key="quinc-pair"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-4"
+            >
+              <p
+                className="text-center text-xs uppercase tracking-widest mb-5"
+                style={{ color: 'rgba(212,175,55,0.6)', letterSpacing: '0.3em' }}
+              >
+                Cinematic Stills
+              </p>
+              <div className="grid grid-cols-2 gap-3" style={{ height: '520px' }}>
+                {quincItems.slice(0, 2).map((item) => (
+                  <CinematicCard key={item.id} item={item} onClick={() => openLightbox(item)} />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Gallery Grid */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -132,46 +287,13 @@ export default function Portfolio() {
             initial="hidden"
             animate="visible"
           >
-            {filtered.map((item) => (
-              <motion.div
-                key={item.id}
-                variants={cardVariants}
-                className="gallery-item group"
-                onClick={() => openLightbox(item)}
-                whileHover={{ scale: 1.01 }}
-              >
-                {item.type === 'video' ? (
-                  <video
-                    src={item.src}
-                    muted
-                    loop
-                    playsInline
-                    className="w-full h-full object-cover"
-                    onMouseEnter={(e) => e.currentTarget.play()}
-                    onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0 }}
-                  />
-                ) : (
-                  <img src={item.src} alt={item.title} className="w-full h-full object-cover" />
-                )}
-
-                {/* Hover overlay */}
-                <div
-                  className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
-                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }}
-                >
-                  <span
-                    className="text-xs uppercase tracking-widest mb-2"
-                    style={{ color: '#d4af37', letterSpacing: '0.2em' }}
-                  >
-                    {item.category}
-                  </span>
-                  <p className="text-white text-center font-semibold text-sm">{item.title}</p>
-                  <p className="text-xs mt-2 uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.6)' }}>
-                    {item.type === 'video' ? '▶ Play' : '⊕ View'}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+            {(showQuincPair ? otherItems : filtered).map((item) =>
+              item.cinematic ? (
+                <CinematicCard key={item.id} item={item} onClick={() => openLightbox(item)} />
+              ) : (
+                <StandardCard key={item.id} item={item} onClick={() => openLightbox(item)} />
+              )
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -194,11 +316,7 @@ export default function Portfolio() {
               className="lightbox-content"
               onClick={(e) => e.stopPropagation()}
             >
-              {selected.type === 'video' ? (
-                <video src={selected.src} controls autoPlay className="w-full max-h-[85vh]" />
-              ) : (
-                <img src={selected.src} alt={selected.title} />
-              )}
+              <img src={selected.src} alt={selected.title} />
               <button
                 onClick={() => setLightboxOpen(false)}
                 className="absolute top-4 right-4 text-2xl font-light transition-colors duration-200"
