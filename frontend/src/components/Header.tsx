@@ -41,9 +41,9 @@ export default function Header() {
           <Image
             src="/logo.jpg"
             alt="Daniel Silva Photography"
-            width={160}
-            height={48}
-            className="h-10 w-auto md:h-12 object-contain"
+            width={220}
+            height={80}
+            className="h-16 w-auto md:h-24 object-contain"
             priority
           />
         </Link>

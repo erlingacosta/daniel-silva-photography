@@ -18,9 +18,9 @@ export default function Footer() {
               <Image
                 src="/logo.jpg"
                 alt="Daniel Silva Photography"
-                width={180}
-                height={54}
-                className="h-14 w-auto object-contain"
+                width={220}
+                height={80}
+                className="h-20 w-auto object-contain"
               />
             </div>
             <p className="text-sm leading-relaxed" style={{ color: '#666666' }}>
