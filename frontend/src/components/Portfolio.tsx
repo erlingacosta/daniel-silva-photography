@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import QuinceañeraGallery from './QuinceañeraGallery'
+import WeddingGallery from './WeddingGallery'
 
 const serviceTypes = ['All', 'Weddings', 'Quinceañeras', 'Events', 'Portraits']
 
@@ -273,13 +274,18 @@ export default function Portfolio() {
     setLightboxOpen(true)
   }
 
-  // For Quinceañeras category, show side-by-side pair at top
+  // For Quinceañeras category, show carousel at top
   const quincItems = filtered.filter((i) => i.category === 'Quinceañeras')
   const showQuincPair = activeCategory === 'Quinceañeras' && quincItems.length >= 2
-  // When viewing Quinceañeras, don't show the individual images since gallery is displayed
+  // For Weddings category, show carousel at top
+  const weddingItems = filtered.filter((i) => i.category === 'Weddings')
+  const showWeddingCarousel = activeCategory === 'Weddings' && weddingItems.length > 0
+  // When viewing Quinceañeras or Weddings, don't show the individual items since gallery is displayed
   const otherItems = showQuincPair
     ? filtered.filter((i) => i.category !== 'Quinceañeras')
-    : filtered
+    : showWeddingCarousel
+      ? filtered.filter((i) => i.category !== 'Weddings')
+      : filtered
 
   return (
     <section id="portfolio" className="py-24" style={{ backgroundColor: '#0f0f0f' }}>
@@ -325,6 +331,30 @@ export default function Portfolio() {
           ))}
         </motion.div>
 
+        {/* Wedding cinematic gallery carousel */}
+        <AnimatePresence>
+          {showWeddingCarousel && (
+            <motion.div
+              key="wedding-carousel"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-12"
+            >
+              <p
+                className="text-center text-xs uppercase tracking-widest mb-8"
+                style={{ color: 'rgba(212,175,55,0.6)', letterSpacing: '0.3em' }}
+              >
+                Featured Weddings
+              </p>
+              <div className="max-w-3xl mx-auto">
+                <WeddingGallery />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Quinceañera cinematic gallery carousel */}
         <AnimatePresence>
           {showQuincPair && (
@@ -358,7 +388,7 @@ export default function Portfolio() {
             initial="hidden"
             animate="visible"
           >
-            {(showQuincPair ? otherItems : filtered).map((item) =>
+            {(showQuincPair || showWeddingCarousel ? otherItems : filtered).map((item) =>
               item.type === 'video' ? (
                 <VideoCard key={item.id} item={item} onClick={() => openLightbox(item)} />
               ) : item.cinematic ? (
