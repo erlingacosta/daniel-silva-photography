@@ -26,6 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root route
+@app.get("/")
+def root():
+    return {"message": "Daniel Silva Photography API", "version": "1.0.0", "docs": "/docs"}
+
 # Health check endpoints
 @app.get("/health")
 def health():

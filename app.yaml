@@ -15,7 +15,7 @@ services:
     instance_size_slug: apps-s-1vcpu-1gb
     envs:
       - key: DATABASE_URL
-        value: ${db.connection_string}
+        value: postgresql://${db.username}:${db.password}@${db.host}:${db.port}/${db.database}?sslmode=require
       - key: SECRET_KEY
         value: ${SECRET_KEY}
       - key: STRIPE_SECRET_KEY
