@@ -17,5 +17,5 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
-# Run migrations and start server
-CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
+# Start server (migrations handled by init.sql in database setup)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
