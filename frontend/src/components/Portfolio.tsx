@@ -11,9 +11,10 @@ const portfolio = [
     id: 1,
     title: 'Wedding Ceremony & First Dance',
     category: 'Weddings',
-    type: 'image' as const,
-    src: '/images/wedding-ceremony-still.jpg',
-    cinematic: false,
+    type: 'video' as const,
+    src: '/videos/wedding-ceremony-first-dance.mp4',
+    poster: '/images/wedding-ceremony-still.jpg',
+    cinematic: true,
   },
   {
     id: 2,
@@ -86,6 +87,76 @@ const cardVariants = {
 }
 
 type PortfolioItem = typeof portfolio[0]
+
+function VideoCard({ item, onClick }: { item: PortfolioItem; onClick: () => void }) {
+  return (
+    <motion.div
+      variants={cardVariants}
+      className="gallery-item group cursor-pointer overflow-hidden relative"
+      onClick={onClick}
+    >
+      <motion.div
+        className="w-full h-full"
+        whileHover={{ scale: 1.08 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        style={{ transformOrigin: 'center center' }}
+      >
+        <video
+          src={item.src}
+          poster={item.poster}
+          className="w-full h-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+      </motion.div>
+
+      {/* Gold shimmer overlay on hover */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        initial={{ opacity: 0 }}
+        whileHover={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, transparent 50%, rgba(212,175,55,0.05) 100%)',
+        }}
+      />
+
+      {/* Hover info overlay */}
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }}
+      >
+        <span
+          className="text-xs uppercase tracking-widest mb-2"
+          style={{ color: '#d4af37', letterSpacing: '0.2em' }}
+        >
+          {item.category}
+        </span>
+        <p className="text-white text-center font-semibold text-sm">{item.title}</p>
+        <p className="text-xs mt-2 uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.6)' }}>
+          ▶ Play
+        </p>
+      </div>
+
+      {/* Video badge */}
+      <div
+        className="absolute top-3 left-3 px-2 py-1 text-xs uppercase tracking-widest"
+        style={{
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          border: '1px solid rgba(212,175,55,0.4)',
+          color: '#d4af37',
+          letterSpacing: '0.15em',
+          fontSize: '9px',
+        }}
+      >
+        ▶ Video
+      </div>
+    </motion.div>
+  )
+}
 
 function CinematicCard({ item, onClick }: { item: PortfolioItem; onClick: () => void }) {
   return (
@@ -288,7 +359,9 @@ export default function Portfolio() {
             animate="visible"
           >
             {(showQuincPair ? otherItems : filtered).map((item) =>
-              item.cinematic ? (
+              item.type === 'video' ? (
+                <VideoCard key={item.id} item={item} onClick={() => openLightbox(item)} />
+              ) : item.cinematic ? (
                 <CinematicCard key={item.id} item={item} onClick={() => openLightbox(item)} />
               ) : (
                 <StandardCard key={item.id} item={item} onClick={() => openLightbox(item)} />
