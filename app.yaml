@@ -39,7 +39,7 @@ services:
       branch: main
       deploy_on_push: true
     source_dir: frontend
-    build_command: npm install && npm run build
+    build_command: npm ci && npm run build
     run_command: npx next start -p 3000
     http_port: 3000
     instance_count: 1
@@ -47,6 +47,8 @@ services:
     envs:
       - key: NEXT_PUBLIC_API_URL
         value: https://${app.domain}/api
+      - key: NODE_ENV
+        value: production
 
 databases:
   - name: db
