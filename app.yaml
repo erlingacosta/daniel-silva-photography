@@ -1,6 +1,34 @@
 name: daniel-silva-photography
 region: nyc
 
+ingress:
+  rules:
+    - component:
+        name: frontend
+      match:
+        path:
+          prefix: /
+    - component:
+        name: backend
+      match:
+        path:
+          prefix: /api
+    - component:
+        name: backend
+      match:
+        path:
+          prefix: /health
+    - component:
+        name: backend
+      match:
+        path:
+          prefix: /docs
+    - component:
+        name: backend
+      match:
+        path:
+          prefix: /openapi.json
+
 services:
   - name: backend
     github:
@@ -27,7 +55,7 @@ services:
       - key: SENDGRID_FROM_EMAIL
         value: contact@danielsilva.photo
       - key: CORS_ORIGINS
-        value: https://${app.domain},http://localhost:3000
+        value: https://${app.domain},http://localhost:3000,http://localhost
       - key: DEBUG
         value: "False"
     health_check:
