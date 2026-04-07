@@ -21,7 +21,7 @@ export default function LogoCircle({ width, height, className = '', priority = f
       }}
     >
       <Image
-        src="/logo.jpg"
+        src="/logo-hires.jpg"
         alt="Daniel Silva Photography"
         fill
         className="object-cover"
