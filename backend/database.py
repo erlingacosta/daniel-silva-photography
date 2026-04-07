@@ -1,17 +1,12 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from config import settings
+from sqlalchemy.orm import sessionmaker
+from models import Base
+import os
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://daniel:danielsilva@localhost:5432/daniel_silva_photo")
 
+engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 def get_db():
     db = SessionLocal()
@@ -19,3 +14,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def init_db():
+    """Create all tables"""
+    Base.metadata.create_all(bind=engine)

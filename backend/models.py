@@ -1,137 +1,98 @@
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Enum, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Table, Enum
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from database import Base
+from datetime import datetime
 import enum
 
-class UserRole(str, enum.Enum):
-    ADMIN = "admin"
-    CLIENT = "client"
-
-class BookingStatus(str, enum.Enum):
-    INQUIRY = "inquiry"
-    CONFIRMED = "confirmed"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-
-class ServiceType(str, enum.Enum):
-    WEDDING = "wedding"
-    QUINCEAÑERA = "quinceañera"
-    EVENTS = "events"
-    PORTRAITS = "portraits"
+Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
     full_name = Column(String)
-    password_hash = Column(String)
-    phone = Column(String, nullable=True)
-    role = Column(Enum(UserRole), default=UserRole.CLIENT)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     bookings = relationship("Booking", back_populates="client")
-    testimonials = relationship("Testimonial", back_populates="user")
+    inquiries = relationship("Inquiry", back_populates="sender")
+
+class Portfolio(Base):
+    __tablename__ = "portfolios"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    description = Column(Text)
+    category = Column(String)  # wedding, quinceañera, event, portrait
+    image_url = Column(String)
+    thumbnail_url = Column(String)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Testimonial(Base):
+    __tablename__ = "testimonials"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    client_name = Column(String)
+    event_type = Column(String)  # wedding, quinceañera, event, portrait
+    quote = Column(Text)
+    rating = Column(Float)
+    image_url = Column(String)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ServicePackage(Base):
+    __tablename__ = "service_packages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)  # Signature, Premium Plus, Elite
+    description = Column(Text)
+    price = Column(Float)
+    deliverables = Column(Text)  # JSON string of deliverables
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    bookings = relationship("Booking", back_populates="package")
 
 class Booking(Base):
     __tablename__ = "bookings"
     
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("users.id"))
-    service_type = Column(Enum(ServiceType))
+    package_id = Column(Integer, ForeignKey("service_packages.id"))
     event_date = Column(DateTime)
+    event_type = Column(String)  # wedding, quinceañera, event, portrait
     event_location = Column(String)
-    package = Column(String)  # Signature, Premium Plus, Elite
-    price = Column(Float)
-    status = Column(Enum(BookingStatus), default=BookingStatus.INQUIRY)
-    notes = Column(Text, nullable=True)
-    contract_signed = Column(Boolean, default=False)
+    notes = Column(Text)
+    status = Column(String, default="pending")  # pending, confirmed, completed, cancelled
+    total_price = Column(Float)
+    deposit_paid = Column(Boolean, default=False)
     payment_intent_id = Column(String, nullable=True)
-    payment_status = Column(String, default="pending")
-    deliverables_ready = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     client = relationship("User", back_populates="bookings")
-    gallery = relationship("Gallery", uselist=False, back_populates="booking", cascade="all, delete-orphan")
-    invoices = relationship("Invoice", back_populates="booking")
-
-class Gallery(Base):
-    __tablename__ = "galleries"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=True)
-    name = Column(String)
-    description = Column(Text, nullable=True)
-    service_type = Column(Enum(ServiceType))
-    is_public = Column(Boolean, default=True)
-    password = Column(String, nullable=True)  # For password-protected galleries
-    cover_image_url = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    booking = relationship("Booking", back_populates="gallery")
-    images = relationship("GalleryImage", back_populates="gallery", cascade="all, delete-orphan")
-
-class GalleryImage(Base):
-    __tablename__ = "gallery_images"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    gallery_id = Column(Integer, ForeignKey("galleries.id"))
-    image_url = Column(String)
-    thumbnail_url = Column(String)
-    caption = Column(String, nullable=True)
-    display_order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    
-    gallery = relationship("Gallery", back_populates="images")
+    package = relationship("ServicePackage", back_populates="bookings")
 
 class Inquiry(Base):
     __tablename__ = "inquiries"
     
     id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     email = Column(String)
-    full_name = Column(String)
-    phone = Column(String, nullable=True)
-    service_type = Column(Enum(ServiceType))
-    event_date = Column(DateTime, nullable=True)
+    name = Column(String)
+    phone = Column(String)
+    event_type = Column(String)
+    event_date = Column(String)
     message = Column(Text)
-    status = Column(String, default="new")  # new, contacted, converted, lost
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class Testimonial(Base):
-    __tablename__ = "testimonials"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    text = Column(Text)
-    rating = Column(Integer, default=5)  # 1-5 stars
-    photo_url = Column(String, nullable=True)
-    video_url = Column(String, nullable=True)
-    is_featured = Column(Boolean, default=False)
+    status = Column(String, default="new")  # new, contacted, converted, dismissed
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    user = relationship("User", back_populates="testimonials")
-
-class Invoice(Base):
-    __tablename__ = "invoices"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("bookings.id"))
-    invoice_number = Column(String, unique=True)
-    amount = Column(Float)
-    status = Column(String, default="draft")  # draft, sent, paid, overdue
-    due_date = Column(DateTime)
-    paid_date = Column(DateTime, nullable=True)
-    stripe_invoice_id = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    booking = relationship("Booking", back_populates="invoices")
+    sender = relationship("User", back_populates="inquiries")
 
 class NewsletterSubscriber(Base):
     __tablename__ = "newsletter_subscribers"
