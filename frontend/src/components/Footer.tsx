@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="mb-4">
-              <LogoCircle width={90} height={90} />
+              <LogoCircle width={180} height={180} />
             </div>
             <p className="text-sm leading-relaxed" style={{ color: '#666666' }}>
               Premium photography for life's most important moments.

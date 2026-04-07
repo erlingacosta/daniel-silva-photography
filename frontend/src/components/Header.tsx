@@ -39,7 +39,7 @@ export default function Header() {
       <nav className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <LogoCircle width={80} height={80} className="md:scale-150 origin-left" priority />
+          <LogoCircle width={160} height={160} className="md:scale-150 origin-left" priority />
         </Link>
 
         {/* Desktop Menu */}
