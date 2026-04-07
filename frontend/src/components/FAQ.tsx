@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const faqItems = [
   {
@@ -13,7 +14,7 @@ const faqItems = [
     id: 2,
     question: 'How long does it take to receive photos?',
     answer:
-      'You can typically expect to receive edited photos within 4-6 weeks of your event. Rush processing is available for an additional fee.',
+      'You can typically expect to receive edited photos within 4–6 weeks of your event. Rush processing is available for an additional fee.',
   },
   {
     id: 3,
@@ -45,29 +46,78 @@ export default function FAQ() {
   const [openId, setOpenId] = useState<number | null>(null)
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-3xl mx-auto px-4">
-        <h2 className="section-title">Frequently Asked Questions</h2>
+    <section className="py-24" style={{ backgroundColor: '#111111' }}>
+      <div className="max-w-3xl mx-auto px-6">
+        {/* Heading */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-4"
+        >
+          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#d4af37', letterSpacing: '0.4em' }}>
+            Questions
+          </p>
+          <h2 className="section-title">FAQ</h2>
+        </motion.div>
+        <div className="section-divider" />
 
-        <div className="space-y-4">
-          {faqItems.map((item) => (
-            <div key={item.id} className="border border-gray-200 rounded-lg">
+        <div className="space-y-3">
+          {faqItems.map((item, i) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.07 }}
+              className="rounded-lg overflow-hidden"
+              style={{ border: '1px solid rgba(212,175,55,0.15)' }}
+            >
               <button
                 onClick={() => setOpenId(openId === item.id ? null : item.id)}
-                className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition"
+                className="w-full px-6 py-5 text-left flex justify-between items-center transition-colors duration-200"
+                style={{
+                  backgroundColor: openId === item.id ? '#1e1e1e' : '#1a1a1a',
+                }}
               >
-                <span className="font-semibold text-gray-900">{item.question}</span>
-                <span className="text-gold text-2xl">
-                  {openId === item.id ? '−' : '+'}
+                <span className="font-medium pr-4" style={{ color: '#f5f5f5' }}>
+                  {item.question}
                 </span>
+                <motion.span
+                  animate={{ rotate: openId === item.id ? 45 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex-shrink-0 text-xl font-light"
+                  style={{ color: '#d4af37' }}
+                >
+                  +
+                </motion.span>
               </button>
 
-              {openId === item.id && (
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                  <p className="text-gray-700">{item.answer}</p>
-                </div>
-              )}
-            </div>
+              <AnimatePresence initial={false}>
+                {openId === item.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div
+                      className="px-6 py-5"
+                      style={{
+                        backgroundColor: '#161616',
+                        borderTop: '1px solid rgba(212,175,55,0.1)',
+                      }}
+                    >
+                      <p className="leading-relaxed text-sm" style={{ color: '#b0b0b0' }}>
+                        {item.answer}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           ))}
         </div>
       </div>

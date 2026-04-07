@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 const packages = [
   {
@@ -46,53 +47,127 @@ const packages = [
   },
 ]
 
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15 } },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+}
+
 export default function Pricing() {
   return (
-    <section id="pricing" className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <h2 className="section-title">Pricing Packages</h2>
-        <p className="section-subtitle">
-          Transparent pricing for premium photography services
-        </p>
+    <section id="pricing" className="py-24" style={{ backgroundColor: '#111111' }}>
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Heading */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-4"
+        >
+          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#d4af37', letterSpacing: '0.4em' }}>
+            Investment
+          </p>
+          <h2 className="section-title">Pricing Packages</h2>
+          <p className="section-subtitle mt-2">
+            Transparent pricing for premium photography services
+          </p>
+        </motion.div>
+        <div className="section-divider" />
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        {/* Cards */}
+        <motion.div
+          className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto items-center"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
           {packages.map((pkg) => (
-            <div
+            <motion.div
               key={pkg.name}
+              variants={cardVariants}
               className={`pricing-card ${pkg.featured ? 'featured' : ''}`}
             >
-              <h3 className="text-2xl font-bold mb-2">{pkg.name}</h3>
-              <p className="text-gold font-semibold mb-1">{pkg.duration}</p>
-              <p className="text-4xl font-bold mb-6 text-gray-900">
+              {pkg.featured && (
+                <p
+                  className="text-xs uppercase tracking-widest mb-4 font-semibold"
+                  style={{ color: '#d4af37', letterSpacing: '0.3em' }}
+                >
+                  Most Popular
+                </p>
+              )}
+              <h3
+                className="text-2xl font-bold mb-2"
+                style={{ fontFamily: "'Playfair Display', serif", color: '#f5f5f5' }}
+              >
+                {pkg.name}
+              </h3>
+              <p className="text-sm uppercase tracking-wider mb-4" style={{ color: '#d4af37', letterSpacing: '0.15em' }}>
+                {pkg.duration}
+              </p>
+              <p
+                className="text-4xl font-bold mb-8"
+                style={{ fontFamily: "'Playfair Display', serif", color: '#f5f5f5' }}
+              >
                 ${pkg.price.toLocaleString()}
               </p>
 
+              <div className="w-full h-px mb-8" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.4), transparent)' }} />
+
               <ul className="text-left mb-8 space-y-3">
                 {pkg.includes.map((item, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-gold mr-3 font-bold">✓</span>
-                    <span className="text-gray-700">{item}</span>
+                  <li key={index} className="flex items-start gap-3">
+                    <span className="mt-0.5 text-sm font-bold flex-shrink-0" style={{ color: '#d4af37' }}>✓</span>
+                    <span className="text-sm" style={{ color: '#b0b0b0' }}>{item}</span>
                   </li>
                 ))}
               </ul>
 
-              <Link href="/booking" className="button button-primary w-full inline-block text-center">
+              <Link
+                href="/booking"
+                className="button button-primary w-full inline-block text-center text-sm"
+              >
                 Book Now
               </Link>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        <div className="mt-16 bg-white p-8 rounded-lg max-w-2xl mx-auto">
-          <h3 className="text-2xl font-bold mb-4">Additional Services</h3>
-          <ul className="space-y-3 text-gray-700">
-            <li>• Pre-wedding engagement shoot: $500</li>
-            <li>• Additional hours (per hour): $400</li>
-            <li>• Drone footage package: $800</li>
-            <li>• Premium hardcover album: $600</li>
-            <li>• High-res file packages: $400</li>
+        {/* Additional services */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="mt-16 max-w-2xl mx-auto rounded-lg p-8"
+          style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(212,175,55,0.15)' }}
+        >
+          <h3
+            className="text-2xl font-bold mb-6 text-center"
+            style={{ fontFamily: "'Playfair Display', serif", color: '#f5f5f5' }}
+          >
+            À La Carte Services
+          </h3>
+          <ul className="space-y-3">
+            {[
+              ['Pre-wedding engagement shoot', '$500'],
+              ['Additional hours (per hour)', '$400'],
+              ['Drone footage package', '$800'],
+              ['Premium hardcover album', '$600'],
+              ['Rush delivery', '$400'],
+            ].map(([service, price]) => (
+              <li key={service} className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)' }}>
+                <span className="text-sm" style={{ color: '#b0b0b0' }}>{service}</span>
+                <span className="text-sm font-semibold" style={{ color: '#d4af37' }}>{price}</span>
+              </li>
+            ))}
           </ul>
-        </div>
+        </motion.div>
       </div>
     </section>
   )

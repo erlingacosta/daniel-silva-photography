@@ -8,13 +8,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        gold: '#D4AF37',
+        // Luxury dark theme
+        'dark-primary': '#0f0f0f',
+        'dark-secondary': '#1a1a1a',
+        'dark-card': '#2a2a2a',
+        'gold-primary': '#d4af37',
+        'gold-secondary': '#c9a961',
+        'text-primary': '#f5f5f5',
+        'text-secondary': '#b0b0b0',
+        gold: '#d4af37',
         navy: '#1a1a2e',
-        dark: '#000000',
+        dark: '#0f0f0f',
       },
       fontFamily: {
-        serif: ['Georgia', 'serif'],
-        sans: ['Helvetica', 'Arial', 'sans-serif'],
+        serif: ['Playfair Display', 'Georgia', 'serif'],
+        sans: ['Inter', 'Helvetica', 'Arial', 'sans-serif'],
+      },
+      backgroundColor: {
+        'dark': '#0f0f0f',
+        'dark-card': '#2a2a2a',
+      },
+      textColor: {
+        'dark': '#0f0f0f',
+        'text-primary': '#f5f5f5',
+        'text-secondary': '#b0b0b0',
       },
     },
   },
