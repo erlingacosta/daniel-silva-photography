@@ -1,8 +1,26 @@
 name: daniel-silva-photography
 region: nyc
 
+ingress:
+  rules:
+    - component:
+        name: daniel-silva-photography-frontend
+      match:
+        path:
+          prefix: /
+    - component:
+        name: daniel-silva-photography-backend
+      match:
+        path:
+          prefix: /api
+    - component:
+        name: daniel-silva-photography-backend
+      match:
+        path:
+          prefix: /health
+
 services:
-  - name: backend
+  - name: daniel-silva-photography-backend
     github:
       repo: erlingacosta/daniel-silva-photography
       branch: main
@@ -33,7 +51,7 @@ services:
     health_check:
       http_path: /health
 
-  - name: frontend
+  - name: daniel-silva-photography-frontend
     github:
       repo: erlingacosta/daniel-silva-photography
       branch: main
