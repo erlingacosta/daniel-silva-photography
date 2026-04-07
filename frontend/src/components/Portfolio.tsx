@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import QuinceañeraGallery from './QuinceañeraGallery'
 
 const serviceTypes = ['All', 'Weddings', 'Quinceañeras', 'Events', 'Portraits']
 
@@ -204,6 +205,7 @@ export default function Portfolio() {
   // For Quinceañeras category, show side-by-side pair at top
   const quincItems = filtered.filter((i) => i.category === 'Quinceañeras')
   const showQuincPair = activeCategory === 'Quinceañeras' && quincItems.length >= 2
+  // When viewing Quinceañeras, don't show the individual images since gallery is displayed
   const otherItems = showQuincPair
     ? filtered.filter((i) => i.category !== 'Quinceañeras')
     : filtered
@@ -252,27 +254,25 @@ export default function Portfolio() {
           ))}
         </motion.div>
 
-        {/* Quinceañera side-by-side cinematic pair */}
+        {/* Quinceañera cinematic gallery carousel */}
         <AnimatePresence>
           {showQuincPair && (
             <motion.div
-              key="quinc-pair"
+              key="quinc-carousel"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
-              className="mb-4"
+              className="mb-12"
             >
               <p
-                className="text-center text-xs uppercase tracking-widest mb-5"
+                className="text-center text-xs uppercase tracking-widest mb-8"
                 style={{ color: 'rgba(212,175,55,0.6)', letterSpacing: '0.3em' }}
               >
-                Cinematic Stills
+                Cinematic Gallery
               </p>
-              <div className="grid grid-cols-2 gap-3" style={{ height: '520px' }}>
-                {quincItems.slice(0, 2).map((item) => (
-                  <CinematicCard key={item.id} item={item} onClick={() => openLightbox(item)} />
-                ))}
+              <div className="max-w-3xl mx-auto">
+                <QuinceañeraGallery />
               </div>
             </motion.div>
           )}
