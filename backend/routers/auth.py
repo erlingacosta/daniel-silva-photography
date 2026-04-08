@@ -57,9 +57,9 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
     # Create new user
     new_user = User(
         email=user_data.email,
+        username=user_data.email.split("@")[0],
         full_name=user_data.full_name,
-        phone=user_data.phone,
-        password_hash=get_password_hash(user_data.password),
+        hashed_password=get_password_hash(user_data.password),
         role="client"
     )
     db.add(new_user)
@@ -81,11 +81,11 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
-    if not user or not verify_password(credentials.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user or not verify_password(credentials.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
     
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is inactive")
+        raise HTTPException(status_code=403, detail="User account is inactive")
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
