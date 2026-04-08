@@ -17,16 +17,12 @@ export default function Newsletter() {
     setLoading(true)
 
     try {
-      await axios.post(
-        `${API_URL}/api/inquiries`,
-        {
-          {
-            email,
-            full_name: 'Newsletter Subscriber',
-            service_type: 'events',
-            message: 'Newsletter signup',
-          }
-      )
+      await axios.post(`${API_URL}/inquiries`, {
+        email,
+        full_name: 'Newsletter Subscriber',
+        service_type: 'events',
+        message: 'Newsletter signup',
+      })
       setMessage('Thank you for subscribing!')
       setSuccess(true)
       setEmail('')
