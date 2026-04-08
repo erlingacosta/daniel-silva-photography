@@ -6,23 +6,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const images = [
   {
-    src: '/images/quinceanera/quince-01-v2.jpg',
+    src: '/images/quinceanera/quince-01-v2.jpg?v=2',
     alt: 'Quinceañera in golden field with sparkly gown',
   },
   {
-    src: '/images/quinceanera/quince-02-v2.jpg',
+    src: '/images/quinceanera/quince-02-v2.jpg?v=2',
     alt: 'Quinceañera glamour shot by rocks with bouquet',
   },
   {
-    src: '/images/quinceanera/quince-03-v2.jpg',
+    src: '/images/quinceanera/quince-03-v2.jpg?v=2',
     alt: 'Quinceañera with floral backdrop in white gown',
   },
   {
-    src: '/images/quinceanera/quince-04-v2.jpg',
+    src: '/images/quinceanera/quince-04-v2.jpg?v=2',
     alt: 'Quinceañera in sparkly red dress by cactus',
   },
   {
-    src: '/images/quinceanera/quince-05-v2.jpg',
+    src: '/images/quinceanera/quince-05-v2.jpg?v=2',
     alt: 'Quinceañera in pale blue gown in forest',
   },
 ]
@@ -48,6 +48,12 @@ export default function QuinceañeraGallery() {
           >
             <Image
               src={images[currentIndex].src}
+              onError={(e) => {
+                const img = e.currentTarget
+                if (!img.src.includes('?v=')) {
+                  img.src = img.src + '?v=' + Date.now()
+                }
+              }}
               alt={images[currentIndex].alt}
               fill
               className="object-cover"
@@ -123,6 +129,12 @@ export default function QuinceañeraGallery() {
           >
             <Image
               src={images[index].src}
+              onError={(e) => {
+                const img = e.currentTarget
+                if (!img.src.includes('?v=')) {
+                  img.src = img.src + '?v=' + Date.now()
+                }
+              }}
               alt={images[index].alt}
               fill
               className="object-cover opacity-70 hover:opacity-100 transition-opacity duration-300"

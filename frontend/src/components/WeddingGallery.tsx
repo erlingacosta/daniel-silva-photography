@@ -6,15 +6,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const images = [
   {
-    src: '/images/wedding/wedding-01.jpg',
+    src: '/images/wedding/wedding-01.jpg?v=2',
     alt: 'Wedding couple under ancient tree',
   },
   {
-    src: '/images/wedding/wedding-02.jpg',
+    src: '/images/wedding/wedding-02.jpg?v=2',
     alt: 'Wedding couple by river with tree',
   },
   {
-    src: '/images/wedding/wedding-03.jpg',
+    src: '/images/wedding/wedding-03.jpg?v=2',
     alt: 'Wedding couple at historic church',
   },
 ]

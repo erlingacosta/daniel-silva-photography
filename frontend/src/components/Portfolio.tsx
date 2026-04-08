@@ -14,7 +14,7 @@ const portfolio = [
     category: 'Weddings',
     type: 'video' as const,
     src: '/videos/wedding-ceremony-first-dance.mp4',
-    poster: '/images/wedding-ceremony-still.jpg',
+    poster: '/images/wedding-ceremony-still.jpg?v=2',
     cinematic: true,
   },
   {
@@ -22,7 +22,7 @@ const portfolio = [
     title: 'Quinceañera — Golden Hour',
     category: 'Quinceañeras',
     type: 'image' as const,
-    src: '/images/quinceanera-still-1.jpg',
+    src: '/images/quinceanera/quince-01-v2.jpg?v=2',
     cinematic: true,
   },
   {
@@ -30,7 +30,7 @@ const portfolio = [
     title: 'Quinceañera — Glamour Close-Up',
     category: 'Quinceañeras',
     type: 'image' as const,
-    src: '/images/quinceanera-still-2.jpg',
+    src: '/images/quinceanera/quince-02-v2.jpg?v=2',
     cinematic: true,
   },
   {
@@ -38,7 +38,7 @@ const portfolio = [
     title: 'Event Photography Highlights',
     category: 'Events',
     type: 'image' as const,
-    src: '/images/event-highlights-still.jpg',
+    src: '/images/event-highlights-still.jpg?v=2',
     cinematic: false,
   },
   {
@@ -46,7 +46,7 @@ const portfolio = [
     title: 'Cinematic Portrait — Natural Light',
     category: 'Portraits',
     type: 'image' as const,
-    src: '/images/portrait-cinematic-still-1.jpg',
+    src: '/images/portrait-cinematic-still-1.jpg?v=2',
     cinematic: true,
   },
   {
@@ -54,7 +54,7 @@ const portfolio = [
     title: 'Cinematic Portrait — Studio',
     category: 'Portraits',
     type: 'image' as const,
-    src: '/images/portrait-cinematic-still-2.jpg',
+    src: '/images/portrait-cinematic-still-2.jpg?v=2',
     cinematic: true,
   },
   {
@@ -62,7 +62,7 @@ const portfolio = [
     title: 'La Hacienda Wedding',
     category: 'Weddings',
     type: 'image' as const,
-    src: '/images/wedding-2.jpg',
+    src: '/images/wedding/wedding-02.jpg?v=2',
     cinematic: false,
   },
   {
@@ -70,7 +70,7 @@ const portfolio = [
     title: 'Family Portrait Collection',
     category: 'Portraits',
     type: 'image' as const,
-    src: '/images/portrait-2.jpg',
+    src: '/images/portrait-2.jpg?v=2',
     cinematic: false,
   },
 ]
@@ -179,6 +179,12 @@ function CinematicCard({ item, onClick }: { item: PortfolioItem; onClick: () => 
           alt={item.title}
           className="w-full h-full object-cover"
           style={{ display: 'block' }}
+          onError={(e) => {
+            const img = e.currentTarget
+            if (!img.src.includes('?v=')) {
+              img.src = img.src + '?v=' + Date.now()
+            }
+          }}
         />
       </motion.div>
 
