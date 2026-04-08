@@ -23,10 +23,10 @@ class UserRegister(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: str
-    full_name: str
-    phone: Optional[str]
-    role: str
-    is_active: bool
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    role: str = "user"
+    is_active: bool = True
     created_at: datetime
     
     class Config:
@@ -137,13 +137,13 @@ class InquiryCreate(BaseModel):
 class InquiryResponse(BaseModel):
     id: int
     email: str
-    full_name: str
-    phone: Optional[str]
-    service_type: str
-    event_date: Optional[datetime]
-    message: str
-    status: str
-    created_at: datetime
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    service_type: Optional[str] = None
+    event_date: Optional[datetime] = None
+    message: Optional[str] = None
+    status: str = "new"
+    created_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
