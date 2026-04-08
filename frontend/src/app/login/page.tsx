@@ -36,7 +36,8 @@ export default function LoginPage() {
       const { access_token, user } = res.data
       localStorage.setItem('djs_token', access_token)
       localStorage.setItem('djs_user', JSON.stringify(user))
-      router.push('/')
+      // Redirect to admin dashboard on successful login
+      router.push('/admin')
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setServerError(err.response?.data?.detail || 'Invalid email or password.')
