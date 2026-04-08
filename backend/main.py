@@ -6,18 +6,48 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from pathlib import Path
 import shutil
+from alembic.config import Config
+from alembic import command
 
-from database import get_db
+from database import get_db, engine
 from models import Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
 from routers import auth, admin
+from db_seed import seed_admin_user
 
 load_dotenv()
+
+# Run Alembic migrations on startup
+def run_migrations():
+    """Run Alembic migrations automatically on app startup."""
+    try:
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        print("✅ Database migrations completed")
+    except Exception as e:
+        print(f"⚠️  Migration error: {e}")
+
+# Seed admin user after migrations
+def seed_database():
+    """Seed the database with admin user if needed."""
+    try:
+        from database import SessionLocal
+        db = SessionLocal()
+        seed_admin_user(db)
+        db.close()
+    except Exception as e:
+        print(f"⚠️  Seeding error: {e}")
 
 app = FastAPI(
     title="Daniel Silva Photography API",
     description="Premium photography booking platform",
     version="1.0.0"
 )
+
+# Run migrations and seeding on startup
+@app.on_event("startup")
+async def startup_event():
+    run_migrations()
+    seed_database()
 
 # CORS middleware
 app.add_middleware(
@@ -275,4 +305,7 @@ async def upload_portfolio(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
+    # Run migrations before starting server
+    run_migrations()
+    seed_database()
     uvicorn.run(app, host="0.0.0.0", port=8000)
