@@ -6,34 +6,33 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from pathlib import Path
 import shutil
-from alembic.config import Config
-from alembic import command
 
-from database import get_db, engine
-from models import Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
+from database import get_db, engine, SessionLocal
+from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
 from routers import auth, admin
 from db_seed import seed_admin_user
 
 load_dotenv()
 
-# Run Alembic migrations on startup
-def run_migrations():
-    """Run Alembic migrations automatically on app startup."""
+# Create tables on startup (uses SQLAlchemy, not Alembic)
+def init_database():
+    """Create all tables using SQLAlchemy metadata.create_all().
+    This works with limited permissions (only needs CREATE TABLE, not schema ownership).
+    """
     try:
-        alembic_cfg = Config("alembic.ini")
-        command.upgrade(alembic_cfg, "head")
-        print("✅ Database migrations completed")
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables initialized")
     except Exception as e:
-        print(f"⚠️  Migration error: {e}")
+        print(f"⚠️  Database initialization error: {e}")
 
-# Seed admin user after migrations
+# Seed admin user after tables are created
 def seed_database():
     """Seed the database with admin user if needed."""
     try:
-        from database import SessionLocal
         db = SessionLocal()
         seed_admin_user(db)
         db.close()
+        print("✅ Database seeding completed")
     except Exception as e:
         print(f"⚠️  Seeding error: {e}")
 
@@ -43,10 +42,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Run migrations and seeding on startup
+# Initialize database and seed on startup
 @app.on_event("startup")
 async def startup_event():
-    run_migrations()
+    init_database()
     seed_database()
 
 # CORS middleware
@@ -305,7 +304,7 @@ async def upload_portfolio(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    # Run migrations before starting server
-    run_migrations()
+    # Initialize database before starting server
+    init_database()
     seed_database()
     uvicorn.run(app, host="0.0.0.0", port=8000)
