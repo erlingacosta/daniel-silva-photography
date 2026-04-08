@@ -17,24 +17,29 @@ load_dotenv()
 # Create tables on startup (uses SQLAlchemy, not Alembic)
 def init_database():
     """Create all tables using SQLAlchemy metadata.create_all().
-    This works with limited permissions (only needs CREATE TABLE, not schema ownership).
+    This requires proper schema permissions. If it fails, check SETUP_DATABASE.md
+    for manual initialization instructions.
     """
     try:
         Base.metadata.create_all(bind=engine)
         print("✅ Database tables initialized")
     except Exception as e:
-        print(f"⚠️  Database initialization error: {e}")
+        print(f"⚠️  Database initialization warning: {e}")
+        print(f"   If tables don't exist, see backend/SETUP_DATABASE.md for setup instructions")
 
 # Seed admin user after tables are created
 def seed_database():
-    """Seed the database with admin user if needed."""
+    """Seed the database with admin user if needed.
+    Silently skips if tables don't exist (not yet initialized).
+    """
     try:
         db = SessionLocal()
         seed_admin_user(db)
         db.close()
         print("✅ Database seeding completed")
     except Exception as e:
-        print(f"⚠️  Seeding error: {e}")
+        # Suppress errors if tables don't exist yet
+        print(f"⚠️  Database seeding skipped: {e}")
 
 app = FastAPI(
     title="Daniel Silva Photography API",
@@ -304,7 +309,14 @@ async def upload_portfolio(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
+    import sys
+    
     # Initialize database before starting server
+    print("🚀 Starting Daniel Silva Photography API...")
     init_database()
     seed_database()
+    
+    print("✅ API ready at http://0.0.0.0:8000")
+    print("📖 Documentation: http://0.0.0.0:8000/docs")
+    
     uvicorn.run(app, host="0.0.0.0", port=8000)
