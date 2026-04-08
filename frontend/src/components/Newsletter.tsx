@@ -4,6 +4,8 @@ import React, { useState } from 'react'
 import axios from 'axios'
 import { motion } from 'framer-motion'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
 export default function Newsletter() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,13 +18,14 @@ export default function Newsletter() {
 
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/inquiries`,
+        `${API_URL}/api/inquiries`,
         {
-          email,
-          full_name: 'Newsletter Subscriber',
-          service_type: 'events',
-          message: 'Newsletter signup',
-        }
+          {
+            email,
+            full_name: 'Newsletter Subscriber',
+            service_type: 'events',
+            message: 'Newsletter signup',
+          }
       )
       setMessage('Thank you for subscribing!')
       setSuccess(true)
