@@ -4,17 +4,25 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from typing import Optional
+import logging
 
 from database import get_db
 from models import User
 from schemas import UserLogin, UserRegister, TokenResponse, UserResponse
 from config import settings
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        logger.error(f"verify_password error: {e}")
+        return False
 
 def get_password_hash(password):
     return pwd_context.hash(password)
@@ -80,12 +88,37 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    logger.info(f"🔐 Login attempt for: {credentials.email}")
+    
+    # Query user by email
     user = db.query(User).filter(User.email == credentials.email).first()
-    if not user or not verify_password(credentials.password, user.hashed_password):
+    
+    if not user:
+        logger.warning(f"❌ User not found: {credentials.email}")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    logger.info(f"✅ User found: {user.email} (ID: {user.id})")
+    logger.debug(f"   Hashed password in DB: {user.hashed_password[:50]}...")
+    logger.debug(f"   Is active: {user.is_active}")
+    logger.debug(f"   Is admin: {user.is_admin}")
+    
+    # Verify password
+    try:
+        password_valid = verify_password(credentials.password, user.hashed_password)
+        logger.info(f"   Password verification: {'✅ VALID' if password_valid else '❌ INVALID'}")
+    except Exception as e:
+        logger.error(f"❌ Password verification error: {e}")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    if not password_valid:
+        logger.warning(f"❌ Password mismatch for: {credentials.email}")
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     if not user.is_active:
+        logger.warning(f"⚠️  Inactive user attempted login: {credentials.email}")
         raise HTTPException(status_code=403, detail="User account is inactive")
+    
+    logger.info(f"✅ Login successful for: {credentials.email}")
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
