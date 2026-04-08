@@ -2,7 +2,7 @@
 
 // Ensure NEXT_PUBLIC_API_URL is available at build time
 if (!process.env.NEXT_PUBLIC_API_URL) {
-  console.warn('⚠️  NEXT_PUBLIC_API_URL not set at build time. Using http://localhost:8000 as fallback.')
+  console.warn('⚠️  NEXT_PUBLIC_API_URL not set at build time. Using https://www.danielsilvaphotography.com/api as fallback.')
 }
 
 const nextConfig = {
@@ -11,9 +11,10 @@ const nextConfig = {
     unoptimized: false,
   },
   // Explicitly set environment variables for build time
-  // These MUST be passed as BUILD_TIME or RUN_AND_BUILD_TIME variables in DigitalOcean App Spec
+  // NEXT_PUBLIC_API_URL defaults to production URL to ensure correct backend calls
+  // Local dev: set NEXT_PUBLIC_API_URL=http://localhost:8000 before running dev server
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://www.danielsilvaphotography.com/api',
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_',
   },
   
