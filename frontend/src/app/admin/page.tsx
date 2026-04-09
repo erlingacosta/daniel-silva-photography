@@ -30,12 +30,18 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('djs_token')
+        const token = localStorage.getItem('access_token')
+        if (!token) {
+          setError('No authentication token found. Please log in.')
+          setLoading(false)
+          return
+        }
         const response = await axios.get(`${API_URL}/api/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         setStats(response.data)
-      } catch {
+      } catch (err) {
+        console.error('Dashboard error:', err)
         setError('Could not load dashboard stats.')
       } finally {
         setLoading(false)
