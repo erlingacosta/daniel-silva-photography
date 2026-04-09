@@ -37,12 +37,25 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str, db: Session = Depends(get_db)):
+async def get_current_user(authorization: Optional[str] = None, db: Session = Depends(get_db)):
+    from fastapi import Header
+    
     credential_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # Extract token from Authorization header
+    token = None
+    if authorization:
+        parts = authorization.split()
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            token = parts[1]
+    
+    if not token:
+        raise credential_exception
+    
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
@@ -132,5 +145,9 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     }
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
+async def get_current_user_info(
+    authorization: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
     return UserResponse.model_validate(current_user)

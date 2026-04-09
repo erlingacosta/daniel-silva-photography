@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
@@ -6,6 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel, EmailStr
 import secrets
 from passlib.context import CryptContext
+from datetime import datetime
 
 from database import get_db
 from models import Booking, User, Inquiry, Invoice, ServicePackage
@@ -36,9 +37,10 @@ router = APIRouter()
 
 @router.get("/dashboard")
 async def get_admin_dashboard(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get admin dashboard stats"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -61,9 +63,10 @@ async def get_admin_dashboard(
 @router.get("/bookings", response_model=List[BookingResponse])
 async def get_all_bookings(
     status: str = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get all bookings (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -78,9 +81,10 @@ async def get_all_bookings(
 @router.post("/bookings/{booking_id}/send-invoice")
 async def send_invoice(
     booking_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Send invoice to client"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -109,9 +113,10 @@ async def send_invoice(
 @router.post("/bookings/{booking_id}/mark-complete")
 async def mark_booking_complete(
     booking_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Mark booking as completed"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -129,9 +134,10 @@ async def mark_booking_complete(
 
 @router.get("/reports/revenue")
 async def get_revenue_report(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get revenue report"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -151,9 +157,10 @@ async def get_revenue_report(
 
 @router.get("/about")
 async def get_about_data(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get about section data"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -164,9 +171,10 @@ async def get_about_data(
 @router.put("/about")
 async def update_about_data(
     data: dict,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Update about section data"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -191,11 +199,11 @@ class PackageUpdate(BaseModel):
 class PackageResponse(BaseModel):
     id: int
     name: str
-    description: str
+    description: Optional[str] = None
     price: float
-    deliverables: str
-    is_active: bool
-    created_at: str
+    deliverables: Optional[str] = None
+    is_active: bool = True
+    created_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -203,9 +211,10 @@ class PackageResponse(BaseModel):
 # Package endpoints
 @router.get("/packages", response_model=List[PackageResponse])
 async def get_all_packages(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get all service packages (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -216,9 +225,10 @@ async def get_all_packages(
 @router.get("/packages/{package_id}", response_model=PackageResponse)
 async def get_package(
     package_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get a single package by ID (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -232,9 +242,10 @@ async def get_package(
 @router.post("/packages", response_model=PackageResponse)
 async def create_package(
     data: PackageCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Create a new service package (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -257,9 +268,10 @@ async def create_package(
 async def update_package(
     package_id: int,
     data: PackageUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Update a service package (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -288,9 +300,10 @@ async def update_package(
 @router.delete("/packages/{package_id}")
 async def delete_package(
     package_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Delete a service package (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -324,12 +337,12 @@ class UserPasswordReset(BaseModel):
 class UserAdminResponse(BaseModel):
     id: int
     email: str
-    username: str
-    full_name: Optional[str]
-    role: str
-    is_active: bool
-    is_admin: bool
-    created_at: str
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    role: str = "client"
+    is_active: bool = True
+    is_admin: bool = False
+    created_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -337,9 +350,10 @@ class UserAdminResponse(BaseModel):
 # User Management Endpoints
 @router.get("/users", response_model=List[UserAdminResponse])
 async def list_users(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get all users (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -350,9 +364,10 @@ async def list_users(
 @router.get("/users/{user_id}", response_model=UserAdminResponse)
 async def get_user(
     user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Get a single user by ID (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -366,9 +381,10 @@ async def get_user(
 @router.post("/users", response_model=UserAdminResponse)
 async def create_user(
     data: UserCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Create a new user (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -413,9 +429,10 @@ async def create_user(
 async def update_user(
     user_id: int,
     data: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Update a user (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -450,9 +467,10 @@ async def update_user(
 async def reset_user_password(
     user_id: int,
     data: UserPasswordReset,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Reset user password (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -472,9 +490,10 @@ async def reset_user_password(
 @router.delete("/users/{user_id}")
 async def deactivate_user(
     user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
 ):
+    current_user = await get_current_user(authorization, db)
     """Soft-delete a user (admin only) - marks as inactive"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
