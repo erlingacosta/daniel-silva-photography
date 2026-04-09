@@ -16,9 +16,10 @@ interface DashboardStats {
 
 const quickLinks = [
   { href: '/admin/portfolio', label: 'Manage Portfolio', desc: 'Add, edit, or remove portfolio items', color: '#d4af37' },
-  { href: '/admin/about', label: 'Edit About Section', desc: 'Update bio and profile photo', color: '#c19b2e' },
-  { href: '/admin/bookings', label: 'View Bookings', desc: 'Review and manage client bookings', color: '#b08827' },
-  { href: '/admin/settings', label: 'Site Settings', desc: 'Configure site content and preferences', color: '#9f7720' },
+  { href: '/admin/packages', label: 'Manage Packages', desc: 'Add, edit, or remove pricing packages', color: '#c19b2e' },
+  { href: '/admin/about', label: 'Edit About Section', desc: 'Update bio and profile photo', color: '#b08827' },
+  { href: '/admin/bookings', label: 'View Bookings', desc: 'Review and manage client bookings', color: '#9f7720' },
+  { href: '/admin/users', label: 'Manage Users', desc: 'Create users, reset passwords, manage roles', color: '#8e6b1a' },
 ]
 
 export default function AdminDashboard() {
@@ -108,7 +109,7 @@ export default function AdminDashboard() {
       <h2 style={{ color: '#f5f5f5', fontSize: '16px', fontWeight: '600', marginBottom: '20px', letterSpacing: '0.02em' }}>
         Quick Actions
       </h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
         {quickLinks.map((link, i) => (
           <motion.div
             key={link.href}

@@ -11,26 +11,58 @@ export default function Newsletter() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showRegister, setShowRegister] = useState(false)
+  const [registerData, setRegisterData] = useState({ full_name: '', password: '', password_confirm: '' })
+  const [registering, setRegistering] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      await axios.post(`${API_URL}/inquiries`, {
+      // Subscribe to newsletter
+      await axios.post(`${API_URL}/newsletter/subscribe`, {
         email,
-        full_name: 'Newsletter Subscriber',
-        service_type: 'events',
-        message: 'Newsletter signup',
       })
       setMessage('Thank you for subscribing!')
       setSuccess(true)
       setEmail('')
-    } catch {
-      setMessage('Error subscribing. Please try again.')
+      setShowRegister(true)
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Error subscribing. Please try again.'
+      setMessage(errorMsg)
       setSuccess(false)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (registerData.password !== registerData.password_confirm) {
+      setMessage('Passwords do not match.')
+      setSuccess(false)
+      return
+    }
+
+    setRegistering(true)
+    try {
+      await axios.post(`${API_URL}/auth/register`, {
+        email,
+        full_name: registerData.full_name,
+        password: registerData.password,
+      })
+      setMessage('Account created! You can now log in.')
+      setSuccess(true)
+      setShowRegister(false)
+      setRegisterData({ full_name: '', password: '', password_confirm: '' })
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Error creating account. Please try again.'
+      setMessage(errorMsg)
+      setSuccess(false)
+    } finally {
+      setRegistering(false)
     }
   }
 

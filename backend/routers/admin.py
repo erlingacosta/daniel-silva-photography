@@ -1,13 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import json
 from pathlib import Path
+from pydantic import BaseModel, EmailStr
+import secrets
+from passlib.context import CryptContext
 
 from database import get_db
-from models import Booking, User, Inquiry, Invoice
+from models import Booking, User, Inquiry, Invoice, ServicePackage
 from schemas import BookingResponse, InvoiceResponse
 from routers.auth import get_current_user
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ABOUT_FILE = Path(__file__).parent.parent / "about_data.json"
 
@@ -167,5 +172,325 @@ async def update_about_data(
         raise HTTPException(status_code=403, detail="Admin access required")
     ABOUT_FILE.write_text(json.dumps(data, indent=2))
     return {"message": "About section updated successfully"}
+
+# Package Management Schemas
+class PackageCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    deliverables: str  # JSON string
+    is_active: bool = True
+
+class PackageUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    deliverables: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class PackageResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    price: float
+    deliverables: str
+    is_active: bool
+    created_at: str
+    
+    class Config:
+        from_attributes = True
+
+# Package endpoints
+@router.get("/packages", response_model=List[PackageResponse])
+async def get_all_packages(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all service packages (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    packages = db.query(ServicePackage).all()
+    return [PackageResponse.model_validate(p) for p in packages]
+
+@router.get("/packages/{package_id}", response_model=PackageResponse)
+async def get_package(
+    package_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a single package by ID (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    package = db.query(ServicePackage).filter(ServicePackage.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+    
+    return PackageResponse.model_validate(package)
+
+@router.post("/packages", response_model=PackageResponse)
+async def create_package(
+    data: PackageCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new service package (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    package = ServicePackage(
+        name=data.name,
+        description=data.description,
+        price=data.price,
+        deliverables=data.deliverables,
+        is_active=data.is_active
+    )
+    
+    db.add(package)
+    db.commit()
+    db.refresh(package)
+    
+    return PackageResponse.model_validate(package)
+
+@router.put("/packages/{package_id}", response_model=PackageResponse)
+async def update_package(
+    package_id: int,
+    data: PackageUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a service package (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    package = db.query(ServicePackage).filter(ServicePackage.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+    
+    # Update fields if provided
+    if data.name is not None:
+        package.name = data.name
+    if data.description is not None:
+        package.description = data.description
+    if data.price is not None:
+        package.price = data.price
+    if data.deliverables is not None:
+        package.deliverables = data.deliverables
+    if data.is_active is not None:
+        package.is_active = data.is_active
+    
+    db.commit()
+    db.refresh(package)
+    
+    return PackageResponse.model_validate(package)
+
+@router.delete("/packages/{package_id}")
+async def delete_package(
+    package_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a service package (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    package = db.query(ServicePackage).filter(ServicePackage.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+    
+    db.delete(package)
+    db.commit()
+    
+    return {"message": "Package deleted successfully"}
+
+
+# User Management Schemas
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    role: str = "client"  # admin or client
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class UserPasswordReset(BaseModel):
+    password: str
+
+class UserAdminResponse(BaseModel):
+    id: int
+    email: str
+    username: str
+    full_name: Optional[str]
+    role: str
+    is_active: bool
+    is_admin: bool
+    created_at: str
+    
+    class Config:
+        from_attributes = True
+
+# User Management Endpoints
+@router.get("/users", response_model=List[UserAdminResponse])
+async def list_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all users (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    users = db.query(User).all()
+    return [UserAdminResponse.model_validate(u) for u in users]
+
+@router.get("/users/{user_id}", response_model=UserAdminResponse)
+async def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a single user by ID (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return UserAdminResponse.model_validate(user)
+
+@router.post("/users", response_model=UserAdminResponse)
+async def create_user(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new user (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if email already exists
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Generate username from email
+    username = data.email.split("@")[0]
+    # Ensure unique username
+    counter = 1
+    base_username = username
+    while db.query(User).filter(User.username == username).first():
+        username = f"{base_username}{counter}"
+        counter += 1
+    
+    # Hash password
+    hashed_password = pwd_context.hash(data.password)
+    
+    # Determine is_admin based on role
+    is_admin = data.role == "admin"
+    
+    user = User(
+        email=data.email,
+        username=username,
+        full_name=data.full_name,
+        hashed_password=hashed_password,
+        role=data.role,
+        is_admin=is_admin,
+        is_active=True
+    )
+    
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    return UserAdminResponse.model_validate(user)
+
+@router.put("/users/{user_id}", response_model=UserAdminResponse)
+async def update_user(
+    user_id: int,
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a user (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if email is being changed and if it's unique
+    if data.email and data.email != user.email:
+        existing = db.query(User).filter(User.email == data.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user.email = data.email
+    
+    if data.full_name is not None:
+        user.full_name = data.full_name
+    
+    if data.role is not None:
+        user.role = data.role
+        user.is_admin = data.role == "admin"
+    
+    if data.is_active is not None:
+        user.is_active = data.is_active
+    
+    db.commit()
+    db.refresh(user)
+    
+    return UserAdminResponse.model_validate(user)
+
+@router.put("/users/{user_id}/password", response_model=dict)
+async def reset_user_password(
+    user_id: int,
+    data: UserPasswordReset,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Reset user password (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not data.password or len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    user.hashed_password = pwd_context.hash(data.password)
+    db.commit()
+    
+    return {"message": "Password reset successfully"}
+
+@router.delete("/users/{user_id}")
+async def deactivate_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft-delete a user (admin only) - marks as inactive"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent deletion of self
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
+    
+    # Soft delete - mark as inactive
+    user.is_active = False
+    db.commit()
+    
+    return {"message": "User deactivated successfully"}
 
 
