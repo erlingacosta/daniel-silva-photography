@@ -22,10 +22,14 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
+  const [editData, setEditData] = useState<{
+    email: string;
+    full_name: string;
+    role: string;
+  }>({
     email: '',
     full_name: '',
-    role: 'client' as const,
+    role: 'client',
   });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -285,7 +289,7 @@ export default function UsersPage() {
                     <label className="block text-sm text-slate-400 mb-2">Role</label>
                     <select
                       value={editData.role}
-                      onChange={(e) => setEditData({ ...editData, role: e.target.value as 'client' | 'admin' })}
+                      onChange={(e) => setEditData({ ...editData, role: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white"
                     >
                       <option value="client">Client</option>

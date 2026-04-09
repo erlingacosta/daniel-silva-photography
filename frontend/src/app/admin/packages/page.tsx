@@ -22,7 +22,13 @@ export default function PackagesPage() {
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [editData, setEditData] = useState({
+  const [editData, setEditData] = useState<{
+    name: string;
+    description: string;
+    price: number;
+    deliverables: string;
+    is_active: boolean;
+  }>({
     name: '',
     description: '',
     price: 0,
