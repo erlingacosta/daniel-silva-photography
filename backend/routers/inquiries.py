@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 from database import get_db
 from models import Inquiry, User
@@ -15,12 +16,24 @@ async def create_inquiry(
     db: Session = Depends(get_db)
 ):
     """Create inquiry (public endpoint)"""
+    
+    # Parse event_date if it's a string
+    event_date = None
+    if inquiry.event_date:
+        if isinstance(inquiry.event_date, str):
+            try:
+                event_date = datetime.fromisoformat(inquiry.event_date.replace('Z', '+00:00'))
+            except:
+                event_date = None
+        else:
+            event_date = inquiry.event_date
+    
     new_inquiry = Inquiry(
         email=inquiry.email,
         full_name=inquiry.full_name,
         phone=inquiry.phone,
         service_type=inquiry.service_type,
-        event_date=inquiry.event_date,
+        event_date=event_date,
         message=inquiry.message,
         status="new"
     )
@@ -28,8 +41,6 @@ async def create_inquiry(
     db.add(new_inquiry)
     db.commit()
     db.refresh(new_inquiry)
-    
-    # In production, send confirmation email here
     
     return InquiryResponse.model_validate(new_inquiry)
 
