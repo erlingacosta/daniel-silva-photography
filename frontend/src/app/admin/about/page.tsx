@@ -42,7 +42,7 @@ export default function AboutAdmin() {
     const fetchAbout = async () => {
       try {
         const token = localStorage.getItem('djs_token')
-        const res = await axios.get(`${API_URL}/api/admin/about`, {
+        const res = await axios.get(`${API_URL}/admin/about`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         setData(res.data)
@@ -61,7 +61,7 @@ export default function AboutAdmin() {
     setSuccess('')
     try {
       const token = localStorage.getItem('djs_token')
-      await axios.put(`${API_URL}/api/admin/about`, data, {
+      await axios.put(`${API_URL}/admin/about`, data, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setSuccess('About section saved successfully.')

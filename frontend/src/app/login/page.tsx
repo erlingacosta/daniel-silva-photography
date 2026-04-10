@@ -29,7 +29,7 @@ export default function LoginPage() {
     setIsLoading(true)
     setServerError('')
     try {
-      const res = await axios.post(`${API_URL}/api/auth/login`, {
+      const res = await axios.post(`${API_URL}/auth/login`, {
         email: data.email,
         password: data.password,
       })

@@ -35,7 +35,7 @@ export default function ContactPage() {
   const fetchMessages = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/contact`, {
+      const response = await fetch(`${API_URL}/admin/contact`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

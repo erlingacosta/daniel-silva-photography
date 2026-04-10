@@ -62,7 +62,7 @@ export default function Pricing() {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
         
-        const pkgResponse = await fetch(`${API_URL}/api/packages`)
+        const pkgResponse = await fetch(`${API_URL}/packages`)
         if (pkgResponse.ok) {
           const data = await pkgResponse.json()
           if (data && data.length > 0) {
@@ -78,7 +78,7 @@ export default function Pricing() {
           }
         }
         
-        const svcResponse = await fetch(`${API_URL}/api/ala-carte`)
+        const svcResponse = await fetch(`${API_URL}/ala-carte`)
         if (svcResponse.ok) {
           const data = await svcResponse.json()
           if (data && data.length > 0) {

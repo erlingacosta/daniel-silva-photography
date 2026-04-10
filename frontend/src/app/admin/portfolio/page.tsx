@@ -37,7 +37,7 @@ export default function PortfolioPage() {
 
   const fetchItems = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/portfolios`)
+      const response = await fetch(`${API_URL}/portfolios`)
       if (!response.ok) throw new Error('Failed to fetch portfolio')
       const data = await response.json()
       setItems(data)
@@ -58,7 +58,7 @@ export default function PortfolioPage() {
       const formData = new FormData()
       formData.append('file', e.target.files[0])
 
-      const response = await fetch(`${API_URL}/api/upload`, {
+      const response = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         body: formData,
       })
@@ -87,7 +87,7 @@ export default function PortfolioPage() {
 
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/portfolio`, {
+      const response = await fetch(`${API_URL}/admin/portfolio`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -111,7 +111,7 @@ export default function PortfolioPage() {
     if (!confirm('Delete this portfolio item?')) return
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/portfolio/${id}`, {
+      const response = await fetch(`${API_URL}/admin/portfolio/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       })

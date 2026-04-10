@@ -36,7 +36,7 @@ export default function AdminDashboard() {
           setLoading(false)
           return
         }
-        const response = await axios.get(`${API_URL}/api/admin/dashboard`, {
+        const response = await axios.get(`${API_URL}/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         setStats(response.data)

@@ -9,19 +9,19 @@ interface Package {
   name: string
   price: number
   description: string
+  deliverables: string
 }
 
-export default function InquiryPage() {
+export default function BookingPage() {
   const router = useRouter()
   const [packages, setPackages] = useState<Package[]>([])
   const [formData, setFormData] = useState({
-    email: '',
-    full_name: '',
-    phone: '',
-    service_type: 'wedding',
-    event_date: '',
-    message: '',
+    client_email: '',
     package_id: '',
+    event_date: '',
+    event_type: 'wedding',
+    event_location: '',
+    notes: '',
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -50,41 +50,41 @@ export default function InquiryPage() {
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${API_URL}/inquiries`, {
+      const response = await fetch(`${API_URL}/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
-          full_name: formData.full_name,
-          phone: formData.phone,
-          service_type: formData.service_type,
-          event_date: formData.event_date || null,
-          message: formData.message,
+          client_email: formData.client_email,
+          package_id: parseInt(formData.package_id),
+          event_date: formData.event_date,
+          event_type: formData.event_type,
+          event_location: formData.event_location,
+          notes: formData.notes,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to submit inquiry')
+        const data = await response.json()
+        throw new Error(data.detail || 'Failed to create booking')
       }
 
       setSuccess(true)
       setFormData({
-        email: '',
-        full_name: '',
-        phone: '',
-        service_type: 'wedding',
-        event_date: '',
-        message: '',
+        client_email: '',
         package_id: '',
+        event_date: '',
+        event_type: 'wedding',
+        event_location: '',
+        notes: '',
       })
 
       setTimeout(() => {
         router.push('/')
       }, 2000)
     } catch (err) {
-      setError('Failed to submit inquiry. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to create booking. Please try again.')
       console.error(err)
     } finally {
       setLoading(false)
@@ -107,17 +107,17 @@ export default function InquiryPage() {
             className="text-4xl font-bold mb-2"
             style={{ fontFamily: "'Playfair Display', serif", color: '#f5f5f5' }}
           >
-            Let's Create Magic
+            Book Your Session
           </h1>
           <p className="text-slate-400">
-            Tell us about your vision and let's discuss how we can bring it to life.
+            Reserve your date and let's create beautiful memories together.
           </p>
         </div>
 
         {success ? (
           <div className="p-6 rounded" style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
             <p style={{ color: '#86efac' }} className="text-center">
-              Thank you! We've received your inquiry and will be in touch soon.
+              Thank you! Your booking has been created. We'll send you a confirmation email shortly.
             </p>
           </div>
         ) : (
@@ -130,50 +130,57 @@ export default function InquiryPage() {
 
             <div>
               <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
-                Full Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
                 Email *
               </label>
               <input
                 type="email"
                 required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={formData.client_email}
+                onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
                 className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
               />
             </div>
 
             <div>
               <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
-                Service Type *
+                Select Package *
               </label>
               <select
                 required
-                value={formData.service_type}
-                onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+                value={formData.package_id}
+                onChange={(e) => setFormData({ ...formData, package_id: e.target.value })}
+                className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
+              >
+                <option value="">Choose a package</option>
+                {packages.map((pkg) => (
+                  <option key={pkg.id} value={pkg.id}>
+                    {pkg.name} - ${pkg.price.toLocaleString()}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
+                Event Date *
+              </label>
+              <input
+                type="date"
+                required
+                value={formData.event_date}
+                onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
+                Event Type *
+              </label>
+              <select
+                required
+                value={formData.event_type}
+                onChange={(e) => setFormData({ ...formData, event_type: e.target.value })}
                 className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
               >
                 <option value="wedding">Wedding</option>
@@ -185,45 +192,27 @@ export default function InquiryPage() {
 
             <div>
               <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
-                Event Date
+                Event Location *
               </label>
               <input
-                type="date"
-                value={formData.event_date}
-                onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                type="text"
+                required
+                placeholder="City, venue, or location"
+                value={formData.event_location}
+                onChange={(e) => setFormData({ ...formData, event_location: e.target.value })}
                 className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
               />
             </div>
 
-            {packages.length > 0 && (
-              <div>
-                <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
-                  Interested Package
-                </label>
-                <select
-                  value={formData.package_id}
-                  onChange={(e) => setFormData({ ...formData, package_id: e.target.value })}
-                  className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
-                >
-                  <option value="">Select a package (optional)</option>
-                  {packages.map((pkg) => (
-                    <option key={pkg.id} value={pkg.id}>
-                      {pkg.name} - ${pkg.price.toLocaleString()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             <div>
               <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
-                Message *
+                Additional Notes
               </label>
               <textarea
-                required
-                rows={5}
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                rows={4}
+                placeholder="Any special requests or details..."
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
               />
             </div>
@@ -233,7 +222,7 @@ export default function InquiryPage() {
               disabled={loading}
               className="w-full button button-primary py-3 disabled:opacity-50"
             >
-              {loading ? 'Sending...' : 'Send Inquiry'}
+              {loading ? 'Creating Booking...' : 'Complete Booking'}
             </button>
           </form>
         )}

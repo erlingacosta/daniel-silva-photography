@@ -38,7 +38,7 @@ export default function BookingsAdmin() {
     const fetchBookings = async () => {
       try {
         const token = localStorage.getItem('djs_token')
-        const res = await axios.get(`${API_URL}/api/admin/bookings`, {
+        const res = await axios.get(`${API_URL}/admin/bookings`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         setBookings(res.data)
@@ -46,7 +46,7 @@ export default function BookingsAdmin() {
       } catch {
         // Try the public endpoint as fallback
         try {
-          const res = await axios.get(`${API_URL}/api/bookings`)
+          const res = await axios.get(`${API_URL}/bookings`)
           setBookings(res.data)
           setFiltered(res.data)
         } catch {

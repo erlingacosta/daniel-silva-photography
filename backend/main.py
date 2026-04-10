@@ -324,9 +324,14 @@ def get_featured_in(db: Session = Depends(get_db)):
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
+        print(f"📤 Uploading file: {file.filename}")
         url = await upload_to_spaces(file, folder="images")
+        print(f"✅ Upload successful: {url}")
         return {"url": url, "filename": file.filename, "message": "Uploaded successfully"}
     except Exception as e:
+        print(f"❌ Upload error: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 if __name__ == "__main__":

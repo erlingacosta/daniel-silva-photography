@@ -37,7 +37,7 @@ export default function ServicesPage() {
   const fetchServices = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/services`, {
+      const response = await fetch(`${API_URL}/admin/services`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
       if (!response.ok) throw new Error('Failed to fetch services')
@@ -60,7 +60,7 @@ export default function ServicesPage() {
 
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/services`, {
+      const response = await fetch(`${API_URL}/admin/services`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -84,7 +84,7 @@ export default function ServicesPage() {
     if (!selectedService) return
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/services/${selectedService.id}`, {
+      const response = await fetch(`${API_URL}/admin/services/${selectedService.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -108,7 +108,7 @@ export default function ServicesPage() {
     if (!confirm('Delete this service?')) return
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/services/${id}`, {
+      const response = await fetch(`${API_URL}/admin/services/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       })

@@ -37,7 +37,7 @@ export default function FaqPage() {
   const fetchFaqs = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/faq`, {
+      const response = await fetch(`${API_URL}/admin/faq`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
       if (!response.ok) throw new Error('Failed to fetch FAQs')
@@ -60,7 +60,7 @@ export default function FaqPage() {
 
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/faq`, {
+      const response = await fetch(`${API_URL}/admin/faq`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -84,7 +84,7 @@ export default function FaqPage() {
     if (!selectedFaq) return
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/faq/${selectedFaq.id}`, {
+      const response = await fetch(`${API_URL}/admin/faq/${selectedFaq.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -108,7 +108,7 @@ export default function FaqPage() {
     if (!confirm('Delete this FAQ?')) return
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/admin/faq/${id}`, {
+      const response = await fetch(`${API_URL}/admin/faq/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       })

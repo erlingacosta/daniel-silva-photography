@@ -56,7 +56,7 @@ export default function FAQ() {
     const fetchFaq = async () => {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        const response = await fetch(`${API_URL}/api/faq`)
+        const response = await fetch(`${API_URL}/faq`)
         if (response.ok) {
           const data = await response.json()
           if (data && data.length > 0) {

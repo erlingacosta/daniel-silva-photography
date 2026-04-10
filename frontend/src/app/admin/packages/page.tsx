@@ -50,7 +50,7 @@ export default function PackagesPage() {
   const fetchPackages = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/api/admin/packages`, {
+      const response = await fetch(`${API_URL}/admin/packages`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -102,8 +102,8 @@ export default function PackagesPage() {
     try {
       const token = localStorage.getItem('access_token');
       const url = isCreating
-        ? `${API_URL}/api/admin/packages`
-        : `${API_URL}/api/admin/packages/${selectedPackage?.id}`;
+        ? `${API_URL}/admin/packages`
+        : `${API_URL}/admin/packages/${selectedPackage?.id}`;
 
       const response = await fetch(url, {
         method: isCreating ? 'POST' : 'PUT',
@@ -140,7 +140,7 @@ export default function PackagesPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/api/admin/packages/${packageId}`, {
+      const response = await fetch(`${API_URL}/admin/packages/${packageId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
