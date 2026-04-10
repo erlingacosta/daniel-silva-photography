@@ -55,10 +55,10 @@ app.add_middleware(
 )
 
 # Auth router
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # Admin router
-app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
 # Root route
 @app.get("/")
@@ -70,12 +70,12 @@ def root():
 def health():
     return {"status": "ok"}
 
-@app.get("/api/status")
+@app.get("/status")
 def status():
     return {"status": "Daniel Silva Photography API is running", "version": "1.0.0"}
 
 # Portfolio endpoints
-@app.get("/api/portfolios")
+@app.get("/portfolios")
 def get_portfolios(db: Session = Depends(get_db)):
     portfolios = db.query(Portfolio).order_by(Portfolio.order).all()
     return [
@@ -90,7 +90,7 @@ def get_portfolios(db: Session = Depends(get_db)):
         for p in portfolios
     ]
 
-@app.post("/api/portfolios")
+@app.post("/portfolios")
 def create_portfolio(title: str, description: str, category: str, image_url: str, db: Session = Depends(get_db)):
     portfolio = Portfolio(
         title=title,
@@ -104,7 +104,7 @@ def create_portfolio(title: str, description: str, category: str, image_url: str
     db.refresh(portfolio)
     return {"id": portfolio.id, "title": portfolio.title, "category": portfolio.category}
 
-@app.put("/api/portfolios/{portfolio_id}")
+@app.put("/portfolios/{portfolio_id}")
 def update_portfolio(portfolio_id: int, data: dict, db: Session = Depends(get_db)):
     portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
     if not portfolio:
@@ -118,7 +118,7 @@ def update_portfolio(portfolio_id: int, data: dict, db: Session = Depends(get_db
     db.refresh(portfolio)
     return {"id": portfolio.id, "title": portfolio.title, "category": portfolio.category}
 
-@app.delete("/api/portfolios/{portfolio_id}")
+@app.delete("/portfolios/{portfolio_id}")
 def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
     portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
     if not portfolio:
@@ -128,7 +128,7 @@ def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
     return {"message": "Deleted successfully", "id": portfolio_id}
 
 # Testimonials endpoints
-@app.get("/api/testimonials")
+@app.get("/testimonials")
 def get_testimonials(db: Session = Depends(get_db)):
     testimonials = db.query(Testimonial).order_by(Testimonial.order).all()
     return [
@@ -143,7 +143,7 @@ def get_testimonials(db: Session = Depends(get_db)):
         for t in testimonials
     ]
 
-@app.post("/api/testimonials")
+@app.post("/testimonials")
 def create_testimonial(client_name: str, event_type: str, quote: str, rating: float, image_url: str, db: Session = Depends(get_db)):
     testimonial = Testimonial(
         client_name=client_name,
@@ -158,7 +158,7 @@ def create_testimonial(client_name: str, event_type: str, quote: str, rating: fl
     return {"id": testimonial.id, "client_name": testimonial.client_name}
 
 # Service packages endpoints
-@app.get("/api/packages")
+@app.get("/packages")
 def get_packages(db: Session = Depends(get_db)):
     packages = db.query(ServicePackage).filter(ServicePackage.is_active == True).all()
     return [
@@ -172,7 +172,7 @@ def get_packages(db: Session = Depends(get_db)):
         for p in packages
     ]
 
-@app.post("/api/packages")
+@app.post("/packages")
 def create_package(name: str, description: str, price: float, deliverables: str, db: Session = Depends(get_db)):
     package = ServicePackage(
         name=name,
@@ -186,7 +186,7 @@ def create_package(name: str, description: str, price: float, deliverables: str,
     return {"id": package.id, "name": package.name, "price": package.price}
 
 # Newsletter endpoints
-@app.post("/api/newsletter/subscribe")
+@app.post("/newsletter/subscribe")
 def subscribe_newsletter(email: str, db: Session = Depends(get_db)):
     existing = db.query(NewsletterSubscriber).filter(NewsletterSubscriber.email == email).first()
     if existing:
@@ -199,7 +199,7 @@ def subscribe_newsletter(email: str, db: Session = Depends(get_db)):
     return {"message": "Subscribed successfully", "email": email}
 
 # Inquiry endpoints
-@app.post("/api/inquiries")
+@app.post("/inquiries")
 def create_inquiry(name: str, email: str, phone: str, event_type: str, event_date: str, message: str, db: Session = Depends(get_db)):
     inquiry = Inquiry(
         name=name,
@@ -214,7 +214,7 @@ def create_inquiry(name: str, email: str, phone: str, event_type: str, event_dat
     db.refresh(inquiry)
     return {"id": inquiry.id, "message": "Inquiry received, we'll contact you soon!"}
 
-@app.get("/api/inquiries")
+@app.get("/inquiries")
 def get_inquiries(db: Session = Depends(get_db)):
     inquiries = db.query(Inquiry).order_by(Inquiry.created_at.desc()).all()
     return [
@@ -230,7 +230,7 @@ def get_inquiries(db: Session = Depends(get_db)):
     ]
 
 # Booking endpoints
-@app.post("/api/bookings")
+@app.post("/bookings")
 def create_booking(client_email: str, package_id: int, event_date: str, event_type: str, event_location: str, notes: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == client_email).first()
     if not user:
@@ -262,7 +262,7 @@ def create_booking(client_email: str, package_id: int, event_date: str, event_ty
         "message": "Booking created. A confirmation email will be sent shortly."
     }
 
-@app.get("/api/bookings")
+@app.get("/bookings")
 def get_bookings(db: Session = Depends(get_db)):
     bookings = db.query(Booking).order_by(Booking.created_at.desc()).all()
     return [
@@ -279,7 +279,7 @@ def get_bookings(db: Session = Depends(get_db)):
     ]
 
 # Contact form endpoint
-@app.post("/api/contact")
+@app.post("/contact")
 def create_contact(name: str, email: str, phone: str, message: str, db: Session = Depends(get_db)):
     contact = ContactMessage(
         name=name,
@@ -294,7 +294,7 @@ def create_contact(name: str, email: str, phone: str, message: str, db: Session 
     return {"id": contact.id, "message": "Thank you! We'll get back to you soon."}
 
 # FAQ endpoints
-@app.get("/api/faq")
+@app.get("/faq")
 def get_faq(db: Session = Depends(get_db)):
     faqs = db.query(FaqItem).filter(FaqItem.is_active == True).order_by(FaqItem.order).all()
     return [
@@ -303,7 +303,7 @@ def get_faq(db: Session = Depends(get_db)):
     ]
 
 # A La Carte Services endpoints
-@app.get("/api/ala-carte")
+@app.get("/ala-carte")
 def get_ala_carte(db: Session = Depends(get_db)):
     services = db.query(AlaCarteService).filter(AlaCarteService.is_active == True).order_by(AlaCarteService.order).all()
     return [
@@ -312,7 +312,7 @@ def get_ala_carte(db: Session = Depends(get_db)):
     ]
 
 # Featured In endpoints
-@app.get("/api/featured-in")
+@app.get("/featured-in")
 def get_featured_in(db: Session = Depends(get_db)):
     featured = db.query(FeaturedIn).filter(FeaturedIn.is_active == True).order_by(FeaturedIn.order).all()
     return [
@@ -321,7 +321,7 @@ def get_featured_in(db: Session = Depends(get_db)):
     ]
 
 # Upload endpoint - Spaces
-@app.post("/api/upload")
+@app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
         print(f"📤 Uploading file: {file.filename}")
