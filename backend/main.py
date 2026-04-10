@@ -10,7 +10,7 @@ import shutil
 from database import get_db, engine, SessionLocal
 from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
 from routers import auth, admin
-from db_seed import seed_admin_user
+from db_seed import seed_database as run_seed_database
 
 load_dotenv()
 
@@ -27,14 +27,14 @@ def init_database():
         print(f"⚠️  Database initialization warning: {e}")
         print(f"   If tables don't exist, see backend/SETUP_DATABASE.md for setup instructions")
 
-# Seed admin user after tables are created
+# Seed database after tables are created
 def seed_database():
-    """Seed the database with admin user if needed.
+    """Seed the database with admin user, packages, and portfolios if needed.
     Silently skips if tables don't exist (not yet initialized).
     """
     try:
         db = SessionLocal()
-        seed_admin_user(db)
+        run_seed_database(db)
         db.close()
         print("✅ Database seeding completed")
     except Exception as e:
