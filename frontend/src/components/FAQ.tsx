@@ -1,9 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const faqItems = [
+interface FaqItem {
+  id: number
+  question: string
+  answer: string
+}
+
+const defaultFaqItems = [
   {
     id: 1,
     question: 'What is included in each package?',
@@ -44,6 +50,25 @@ const faqItems = [
 
 export default function FAQ() {
   const [openId, setOpenId] = useState<number | null>(null)
+  const [faqItems, setFaqItems] = useState<FaqItem[]>(defaultFaqItems)
+
+  useEffect(() => {
+    const fetchFaq = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const response = await fetch(`${API_URL}/api/faq`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data && data.length > 0) {
+            setFaqItems(data)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch FAQ:', err)
+      }
+    }
+    fetchFaq()
+  }, [])
 
   return (
     <section className="py-24" style={{ backgroundColor: '#111111' }}>
