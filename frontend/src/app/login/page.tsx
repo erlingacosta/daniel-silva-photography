@@ -34,8 +34,8 @@ export default function LoginPage() {
         password: data.password,
       })
       const { access_token, user } = res.data
-      localStorage.setItem('access_token', access_token)
-      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('djs_token', access_token)
+      localStorage.setItem('djs_user', JSON.stringify(user))
       // Redirect to admin dashboard on successful login
       window.location.href = '/admin'
     } catch (err: unknown) {

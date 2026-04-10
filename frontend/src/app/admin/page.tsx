@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('access_token')
+        const token = localStorage.getItem('djs_token')
         if (!token) {
           setError('No authentication token found. Please log in.')
           setLoading(false)
