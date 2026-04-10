@@ -15,11 +15,11 @@ interface DashboardStats {
 }
 
 const quickLinks = [
-  { href: '/admin/portfolio', label: 'Manage Portfolio', desc: 'Add, edit, or remove portfolio items', color: '#d4af37' },
-  { href: '/admin/packages', label: 'Manage Packages', desc: 'Add, edit, or remove pricing packages', color: '#c19b2e' },
-  { href: '/admin/about', label: 'Edit About Section', desc: 'Update bio and profile photo', color: '#b08827' },
-  { href: '/admin/bookings', label: 'View Bookings', desc: 'Review and manage client bookings', color: '#9f7720' },
-  { href: '/admin/users', label: 'Manage Users', desc: 'Create users, reset passwords, manage roles', color: '#8e6b1a' },
+  { href: '/admin/packages', label: 'Manage Packages', desc: 'Edit pricing packages', color: '#d4af37' },
+  { href: '/admin/services', label: 'A La Carte Services', desc: 'Add extra services and pricing', color: '#c19b2e' },
+  { href: '/admin/faq', label: 'Manage FAQ', desc: 'Edit frequently asked questions', color: '#b08827' },
+  { href: '/admin/contact', label: 'Contact Messages', desc: 'View and reply to inquiries', color: '#9f7720' },
+  { href: '/admin/users', label: 'Manage Users', desc: 'Create users and manage roles', color: '#8e6b1a' },
 ]
 
 export default function AdminDashboard() {

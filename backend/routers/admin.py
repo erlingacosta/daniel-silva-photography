@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from datetime import datetime
 
 from database import get_db
-from models import Booking, User, Inquiry, Invoice, ServicePackage
+from models import Booking, User, Inquiry, Invoice, ServicePackage, ContactMessage, FaqItem, AlaCarteService, FeaturedIn
 from schemas import BookingResponse, InvoiceResponse
 from routers.auth import get_current_user
 
@@ -513,3 +513,192 @@ async def deactivate_user(
     return {"message": "User deactivated successfully"}
 
 
+
+
+# Contact Messages
+@router.get("/contact")
+async def get_contact_messages(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    messages = db.query(ContactMessage).order_by(ContactMessage.created_at.desc()).all()
+    return [
+        {
+            "id": m.id,
+            "name": m.name,
+            "email": m.email,
+            "phone": m.phone,
+            "message": m.message,
+            "status": m.status,
+            "created_at": m.created_at.isoformat(),
+        }
+        for m in messages
+    ]
+
+# FAQ Items
+@router.get("/faq")
+async def get_faq_items(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    items = db.query(FaqItem).order_by(FaqItem.order).all()
+    return [
+        {"id": f.id, "question": f.question, "answer": f.answer, "is_active": f.is_active, "order": f.order}
+        for f in items
+    ]
+
+@router.post("/faq")
+async def create_faq_item(
+    question: str,
+    answer: str,
+    is_active: bool = True,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    faq = FaqItem(question=question, answer=answer, is_active=is_active)
+    db.add(faq)
+    db.commit()
+    db.refresh(faq)
+    return {"id": faq.id, "question": faq.question}
+
+@router.put("/faq/{faq_id}")
+async def update_faq_item(
+    faq_id: int,
+    question: Optional[str] = None,
+    answer: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    faq = db.query(FaqItem).filter(FaqItem.id == faq_id).first()
+    if not faq:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    
+    if question:
+        faq.question = question
+    if answer:
+        faq.answer = answer
+    if is_active is not None:
+        faq.is_active = is_active
+    
+    db.commit()
+    db.refresh(faq)
+    return {"id": faq.id, "question": faq.question}
+
+@router.delete("/faq/{faq_id}")
+async def delete_faq_item(
+    faq_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    faq = db.query(FaqItem).filter(FaqItem.id == faq_id).first()
+    if not faq:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    
+    db.delete(faq)
+    db.commit()
+    return {"message": "FAQ deleted"}
+
+# A La Carte Services
+@router.get("/services")
+async def get_services(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    services = db.query(AlaCarteService).order_by(AlaCarteService.order).all()
+    return [
+        {"id": s.id, "name": s.name, "description": s.description, "price": s.price, "is_active": s.is_active}
+        for s in services
+    ]
+
+@router.post("/services")
+async def create_service(
+    name: str,
+    price: float,
+    description: str = "",
+    is_active: bool = True,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    service = AlaCarteService(name=name, description=description, price=price, is_active=is_active)
+    db.add(service)
+    db.commit()
+    db.refresh(service)
+    return {"id": service.id, "name": service.name, "price": service.price}
+
+@router.put("/services/{service_id}")
+async def update_service(
+    service_id: int,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    price: Optional[float] = None,
+    is_active: Optional[bool] = None,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    service = db.query(AlaCarteService).filter(AlaCarteService.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    if name:
+        service.name = name
+    if description:
+        service.description = description
+    if price is not None:
+        service.price = price
+    if is_active is not None:
+        service.is_active = is_active
+    
+    db.commit()
+    db.refresh(service)
+    return {"id": service.id, "name": service.name}
+
+@router.delete("/services/{service_id}")
+async def delete_service(
+    service_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    service = db.query(AlaCarteService).filter(AlaCarteService.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    db.delete(service)
+    db.commit()
+    return {"message": "Service deleted"}
