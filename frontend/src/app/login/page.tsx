@@ -36,8 +36,10 @@ export default function LoginPage() {
       const { access_token, user } = res.data
       localStorage.setItem('djs_token', access_token)
       localStorage.setItem('djs_user', JSON.stringify(user))
-      // Redirect to admin dashboard on successful login
-      window.location.href = '/admin'
+      // Redirect to admin dashboard on successful login with a small delay for localStorage to sync
+      setTimeout(() => {
+        window.location.href = '/admin'
+      }, 100)
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setServerError(err.response?.data?.detail || 'Invalid email or password.')

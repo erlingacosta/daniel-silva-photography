@@ -21,7 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const token = localStorage.getItem('djs_token')
     if (!token) {
-      router.push('/login')
+      window.location.href = '/login'
       return
     }
     try {
@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setUser(userData)
     } catch {}
     setLoading(false)
-  }, [router])
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('djs_token')
