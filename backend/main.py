@@ -11,34 +11,26 @@ from database import get_db, engine, SessionLocal
 from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn
 from routers import auth, admin
 from db_seed import seed_database as run_seed_database
+from spaces import upload_to_spaces
 
 load_dotenv()
 
-# Create tables on startup (uses SQLAlchemy, not Alembic)
+# Create tables on startup
 def init_database():
-    """Create all tables using SQLAlchemy metadata.create_all().
-    This requires proper schema permissions. If it fails, check SETUP_DATABASE.md
-    for manual initialization instructions.
-    """
     try:
         Base.metadata.create_all(bind=engine)
         print("✅ Database tables initialized")
     except Exception as e:
         print(f"⚠️  Database initialization warning: {e}")
-        print(f"   If tables don't exist, see backend/SETUP_DATABASE.md for setup instructions")
 
 # Seed database after tables are created
 def seed_database():
-    """Seed the database with admin user, packages, and portfolios if needed.
-    Silently skips if tables don't exist (not yet initialized).
-    """
     try:
         db = SessionLocal()
         run_seed_database(db)
         db.close()
         print("✅ Database seeding completed")
     except Exception as e:
-        # Suppress errors if tables don't exist yet
         print(f"⚠️  Database seeding skipped: {e}")
 
 app = FastAPI(
@@ -240,7 +232,6 @@ def get_inquiries(db: Session = Depends(get_db)):
 # Booking endpoints
 @app.post("/api/bookings")
 def create_booking(client_email: str, package_id: int, event_date: str, event_type: str, event_location: str, notes: str, db: Session = Depends(get_db)):
-    # Get or create user by email
     user = db.query(User).filter(User.email == client_email).first()
     if not user:
         user = User(email=client_email, username=client_email.split("@")[0])
@@ -248,12 +239,10 @@ def create_booking(client_email: str, package_id: int, event_date: str, event_ty
         db.commit()
         db.refresh(user)
     
-    # Get package
     package = db.query(ServicePackage).filter(ServicePackage.id == package_id).first()
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
     
-    # Create booking
     booking = Booking(
         client_id=user.id,
         package_id=package_id,
@@ -331,29 +320,18 @@ def get_featured_in(db: Session = Depends(get_db)):
         for f in featured
     ]
 
-# File upload endpoint for portfolios
-@app.post("/api/upload/portfolio")
-async def upload_portfolio(file: UploadFile = File(...)):
-    # Create uploads directory if it doesn't exist
-    upload_dir = Path("uploads/portfolios")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save file
-    file_path = upload_dir / file.filename
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    return {
-        "filename": file.filename,
-        "url": f"/uploads/portfolios/{file.filename}",
-        "message": "File uploaded successfully"
-    }
+# Upload endpoint - Spaces
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        url = await upload_to_spaces(file, folder="images")
+        return {"url": url, "filename": file.filename, "message": "Uploaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
-    import sys
     
-    # Initialize database before starting server
     print("🚀 Starting Daniel Silva Photography API...")
     init_database()
     seed_database()
