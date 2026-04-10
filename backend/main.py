@@ -8,7 +8,7 @@ from pathlib import Path
 import shutil
 
 from database import get_db, engine, SessionLocal
-from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber
+from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn
 from routers import auth, admin
 from db_seed import seed_database as run_seed_database
 
@@ -287,6 +287,48 @@ def get_bookings(db: Session = Depends(get_db)):
             "created_at": b.created_at.isoformat(),
         }
         for b in bookings
+    ]
+
+# Contact form endpoint
+@app.post("/api/contact")
+def create_contact(name: str, email: str, phone: str, message: str, db: Session = Depends(get_db)):
+    contact = ContactMessage(
+        name=name,
+        email=email,
+        phone=phone,
+        message=message,
+        status="new"
+    )
+    db.add(contact)
+    db.commit()
+    db.refresh(contact)
+    return {"id": contact.id, "message": "Thank you! We'll get back to you soon."}
+
+# FAQ endpoints
+@app.get("/api/faq")
+def get_faq(db: Session = Depends(get_db)):
+    faqs = db.query(FaqItem).filter(FaqItem.is_active == True).order_by(FaqItem.order).all()
+    return [
+        {"id": f.id, "question": f.question, "answer": f.answer}
+        for f in faqs
+    ]
+
+# A La Carte Services endpoints
+@app.get("/api/ala-carte")
+def get_ala_carte(db: Session = Depends(get_db)):
+    services = db.query(AlaCarteService).filter(AlaCarteService.is_active == True).order_by(AlaCarteService.order).all()
+    return [
+        {"id": s.id, "name": s.name, "description": s.description, "price": s.price}
+        for s in services
+    ]
+
+# Featured In endpoints
+@app.get("/api/featured-in")
+def get_featured_in(db: Session = Depends(get_db)):
+    featured = db.query(FeaturedIn).filter(FeaturedIn.is_active == True).order_by(FeaturedIn.order).all()
+    return [
+        {"id": f.id, "name": f.name, "logo_url": f.logo_url, "url": f.url}
+        for f in featured
     ]
 
 # File upload endpoint for portfolios

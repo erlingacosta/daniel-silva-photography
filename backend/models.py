@@ -120,3 +120,46 @@ class NewsletterSubscriber(Base):
     email = Column(String, unique=True, index=True)
     subscribed_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    email = Column(String, index=True)
+    phone = Column(String)
+    message = Column(Text)
+    status = Column(String, default="new")  # new, read, replied
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class FaqItem(Base):
+    __tablename__ = "faq_items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    question = Column(String, index=True)
+    answer = Column(Text)
+    order = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AlaCarteService(Base):
+    __tablename__ = "ala_carte_services"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(Text)
+    price = Column(Float)
+    is_active = Column(Boolean, default=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class FeaturedIn(Base):
+    __tablename__ = "featured_in"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)  # Publication/website name
+    logo_url = Column(String)
+    url = Column(String, nullable=True)  # Link to publication
+    is_active = Column(Boolean, default=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
