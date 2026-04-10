@@ -702,3 +702,64 @@ async def delete_service(
     db.delete(service)
     db.commit()
     return {"message": "Service deleted"}
+
+
+# Portfolio Management
+@router.get("/portfolio")
+async def get_portfolio_items(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    items = db.query(Portfolio).order_by(Portfolio.order).all()
+    return [
+        {"id": p.id, "title": p.title, "description": p.description, "category": p.category, "image_url": p.image_url}
+        for p in items
+    ]
+
+@router.post("/portfolio")
+async def create_portfolio_item(
+    title: str,
+    description: str,
+    category: str,
+    image_url: str,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    item = Portfolio(
+        title=title,
+        description=description,
+        category=category,
+        image_url=image_url,
+        thumbnail_url=image_url,
+        order=db.query(Portfolio).count() + 1
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "title": item.title}
+
+@router.delete("/portfolio/{item_id}")
+async def delete_portfolio_item(
+    item_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    item = db.query(Portfolio).filter(Portfolio.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    
+    db.delete(item)
+    db.commit()
+    return {"message": "Deleted"}

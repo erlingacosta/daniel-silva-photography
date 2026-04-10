@@ -1,12 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import axios from 'axios'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
-const CATEGORIES = ['wedding', 'quinceañera', 'event', 'portrait']
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface PortfolioItem {
   id: number
@@ -14,367 +10,204 @@ interface PortfolioItem {
   description: string
   category: string
   image_url: string
-  thumbnail_url: string
 }
 
-interface FormData {
-  title: string
-  description: string
-  category: string
-  image_url: string
-}
-
-const emptyForm: FormData = { title: '', description: '', category: 'wedding', image_url: '' }
-
-function authHeaders() {
-  const token = localStorage.getItem('djs_token')
-  return { Authorization: `Bearer ${token}` }
-}
-
-export default function PortfolioAdmin() {
+export default function PortfolioPage() {
+  const router = useRouter()
   const [items, setItems] = useState<PortfolioItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [form, setForm] = useState<FormData>(emptyForm)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [editData, setEditData] = useState({ title: '', description: '', category: 'Weddings', image_url: '' })
+  const [createData, setCreateData] = useState({ title: '', description: '', category: 'Weddings', image_url: '' })
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+    fetchItems()
+  }, [router])
 
   const fetchItems = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/portfolios`)
-      setItems(res.data)
-    } catch {
-      setError('Failed to load portfolio items.')
+      const response = await fetch(`${API_URL}/api/portfolios`)
+      if (!response.ok) throw new Error('Failed to fetch portfolio')
+      const data = await response.json()
+      setItems(data)
+      setError('')
+    } catch (err) {
+      setError('Error loading portfolio')
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchItems() }, [])
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, forCreate: boolean) => {
+    if (!e.target.files?.[0]) return
+    setUploadingImage(true)
 
-  const openAdd = () => {
-    setForm(emptyForm)
-    setEditingId(null)
-    setShowForm(true)
-    setError('')
-    setSuccess('')
+    try {
+      const formData = new FormData()
+      formData.append('file', e.target.files[0])
+
+      const response = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error('Upload failed')
+      const { url } = await response.json()
+
+      if (forCreate) {
+        setCreateData({ ...createData, image_url: url })
+      } else {
+        setEditData({ ...editData, image_url: url })
+      }
+    } catch (err) {
+      setError('Image upload failed')
+      console.error(err)
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
-  const openEdit = (item: PortfolioItem) => {
-    setForm({ title: item.title, description: item.description, category: item.category, image_url: item.image_url })
-    setEditingId(item.id)
-    setShowForm(true)
-    setError('')
-    setSuccess('')
-  }
-
-  const handleSave = async () => {
-    if (!form.title.trim() || !form.image_url.trim()) {
-      setError('Title and image URL are required.')
+  const handleCreateItem = async () => {
+    if (!createData.title || !createData.image_url) {
+      setError('Title and image are required')
       return
     }
-    setSaving(true)
-    setError('')
+
     try {
-      if (editingId) {
-        await axios.put(
-          `${API_URL}/api/portfolios/${editingId}`,
-          form,
-          { headers: authHeaders() }
-        )
-        setSuccess('Portfolio item updated.')
-      } else {
-        await axios.post(
-          `${API_URL}/api/portfolios`,
-          null,
-          {
-            params: { title: form.title, description: form.description, category: form.category, image_url: form.image_url },
-            headers: authHeaders(),
-          }
-        )
-        setSuccess('Portfolio item added.')
-      }
-      setShowForm(false)
-      fetchItems()
-    } catch {
-      setError('Failed to save. Check that the backend is running.')
-    } finally {
-      setSaving(false)
+      const token = localStorage.getItem('access_token')
+      const response = await fetch(`${API_URL}/api/admin/portfolio`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createData),
+      })
+      if (!response.ok) throw new Error('Failed to create item')
+      const newItem = await response.json()
+      setItems([...items, newItem])
+      setCreateData({ title: '', description: '', category: 'Weddings', image_url: '' })
+      setIsCreating(false)
+      setError('')
+    } catch (err) {
+      setError('Error creating portfolio item')
+      console.error(err)
     }
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteItem = async (id: number) => {
+    if (!confirm('Delete this portfolio item?')) return
     try {
-      await axios.delete(`${API_URL}/api/portfolios/${id}`, { headers: authHeaders() })
-      setDeleteConfirm(null)
-      setSuccess('Item deleted.')
-      fetchItems()
-    } catch {
-      setError('Failed to delete item.')
+      const token = localStorage.getItem('access_token')
+      const response = await fetch(`${API_URL}/api/admin/portfolio/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('Failed to delete')
+      setItems(items.filter(i => i.id !== id))
+      if (selectedItem?.id === id) setSelectedItem(null)
+    } catch (err) {
+      setError('Error deleting item')
+      console.error(err)
     }
   }
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    backgroundColor: '#0d0d0d',
-    border: '1px solid rgba(212,175,55,0.2)',
-    borderRadius: '4px',
-    color: '#f5f5f5',
-    fontSize: '13px',
-    outline: 'none',
-    boxSizing: 'border-box' as const,
+  if (loading) {
+    return <div className="min-h-screen bg-slate-900 text-white p-8"><p className="text-center">Loading...</p></div>
   }
-
-  const labelStyle = { color: '#888', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, display: 'block', marginBottom: '6px' }
 
   return (
-    <div style={{ padding: '40px 48px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <div>
-          <p style={{ color: '#d4af37', fontSize: '10px', letterSpacing: '0.4em', textTransform: 'uppercase', marginBottom: '8px' }}>Content</p>
-          <h1 style={{ color: '#f5f5f5', fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: 'bold' }}>Portfolio</h1>
+    <div className="min-h-screen bg-slate-900 text-white p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Portfolio Management</h1>
+            <p className="text-slate-400">Manage portfolio items</p>
+          </div>
+          <Link href="/admin" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">← Back</Link>
         </div>
-        <button
-          onClick={openAdd}
-          style={{
-            padding: '10px 24px',
-            backgroundColor: '#d4af37',
-            color: '#0a0a0a',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            letterSpacing: '0.06em',
-          }}
-        >
-          + Add Item
-        </button>
-      </div>
 
-      <div style={{ height: '1px', backgroundColor: 'rgba(212,175,55,0.12)', margin: '24px 0' }} />
+        {error && <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded text-red-100">{error}</div>}
 
-      {/* Alerts */}
-      {error && (
-        <div style={{ padding: '12px 16px', backgroundColor: 'rgba(180,40,40,0.1)', border: '1px solid rgba(180,40,40,0.2)', borderRadius: '4px', marginBottom: '20px' }}>
-          <p style={{ color: '#cc6666', fontSize: '13px' }}>{error}</p>
-        </div>
-      )}
-      {success && (
-        <div style={{ padding: '12px 16px', backgroundColor: 'rgba(40,180,80,0.08)', border: '1px solid rgba(40,180,80,0.2)', borderRadius: '4px', marginBottom: '20px' }}>
-          <p style={{ color: '#66cc88', fontSize: '13px' }}>{success}</p>
-        </div>
-      )}
-
-      {/* Add/Edit Form */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            style={{ overflow: 'hidden', marginBottom: '32px' }}
-          >
-            <div style={{ backgroundColor: '#111', border: '1px solid rgba(212,175,55,0.15)', borderRadius: '6px', padding: '28px' }}>
-              <h2 style={{ color: '#f5f5f5', fontSize: '16px', fontWeight: '600', marginBottom: '24px' }}>
-                {editingId ? 'Edit Portfolio Item' : 'Add Portfolio Item'}
-              </h2>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                <div>
-                  <label style={labelStyle}>Title *</label>
-                  <input
-                    style={inputStyle}
-                    value={form.title}
-                    onChange={e => setForm({ ...form, title: e.target.value })}
-                    placeholder="e.g. Wedding at Sunset"
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Category</label>
-                  <select
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                    value={form.category}
-                    onChange={e => setForm({ ...form, category: e.target.value })}
-                  >
-                    {CATEGORIES.map(c => (
-                      <option key={c} value={c} style={{ backgroundColor: '#111' }}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                    ))}
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            {isCreating ? (
+              <div className="bg-slate-800 rounded-lg p-6 mb-6">
+                <h2 className="text-xl font-bold mb-4">New Portfolio Item</h2>
+                <div className="space-y-4">
+                  <input type="text" placeholder="Title" value={createData.title} onChange={(e) => setCreateData({ ...createData, title: e.target.value })} className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white" />
+                  <textarea placeholder="Description" rows={3} value={createData.description} onChange={(e) => setCreateData({ ...createData, description: e.target.value })} className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white" />
+                  <select value={createData.category} onChange={(e) => setCreateData({ ...createData, category: e.target.value })} className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white">
+                    <option>Weddings</option>
+                    <option>Quinceañeras</option>
+                    <option>Events</option>
+                    <option>Portraits</option>
                   </select>
+                  <div className="border-2 border-dashed border-slate-600 rounded p-4">
+                    {createData.image_url ? (
+                      <div>
+                        <img src={createData.image_url} alt="Preview" className="max-w-full max-h-40 mx-auto mb-2" />
+                        <label className="text-sm text-blue-400 cursor-pointer">Change image</label>
+                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, true)} className="hidden" />
+                      </div>
+                    ) : (
+                      <label className="block text-center text-slate-400 cursor-pointer">
+                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, true)} className="hidden" />
+                        Click to upload image
+                      </label>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleCreateItem} disabled={uploadingImage} className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 rounded disabled:opacity-50">Create</button>
+                    <button onClick={() => setIsCreating(false)} className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">Cancel</button>
+                  </div>
                 </div>
               </div>
+            ) : null}
 
-              <div style={{ marginBottom: '20px' }}>
-                <label style={labelStyle}>Image URL *</label>
-                <input
-                  style={inputStyle}
-                  value={form.image_url}
-                  onChange={e => setForm({ ...form, image_url: e.target.value })}
-                  placeholder="/images/wedding/photo.jpg or https://..."
-                />
+            <div className="bg-slate-800 rounded-lg overflow-hidden">
+              <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+                <h2 className="text-xl font-bold">Items ({items.length})</h2>
+                <button onClick={() => setIsCreating(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">+ New Item</button>
               </div>
-
-              <div style={{ marginBottom: '24px' }}>
-                <label style={labelStyle}>Description</label>
-                <textarea
-                  style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                  placeholder="Short description of this portfolio item..."
-                />
-              </div>
-
-              {/* Preview */}
-              {form.image_url && (
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={labelStyle}>Preview</label>
-                  <img
-                    src={form.image_url}
-                    alt="preview"
-                    style={{ width: '160px', height: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(212,175,55,0.15)' }}
-                    onError={e => (e.currentTarget.style.display = 'none')}
-                  />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  style={{
-                    padding: '10px 28px',
-                    backgroundColor: saving ? '#555' : '#d4af37',
-                    color: '#0a0a0a',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: saving ? 'default' : 'pointer',
-                  }}
-                >
-                  {saving ? 'Saving...' : (editingId ? 'Update Item' : 'Add Item')}
-                </button>
-                <button
-                  onClick={() => { setShowForm(false); setError('') }}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: 'transparent',
-                    color: '#777',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '4px',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
+                {items.map(item => (
+                  <div key={item.id} onClick={() => setSelectedItem(item)} className={`p-3 rounded cursor-pointer border ${selectedItem?.id === item.id ? 'border-blue-500 bg-slate-700' : 'border-slate-600 hover:bg-slate-700'}`}>
+                    <img src={item.image_url} alt={item.title} className="w-full h-24 object-cover rounded mb-2" />
+                    <p className="text-sm font-semibold truncate">{item.title}</p>
+                    <p className="text-xs text-slate-400">{item.category}</p>
+                  </div>
+                ))}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
 
-      {/* Items List */}
-      {loading ? (
-        <p style={{ color: '#555', fontSize: '13px' }}>Loading portfolio items...</p>
-      ) : items.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <p style={{ color: '#555', fontSize: '14px', marginBottom: '16px' }}>No portfolio items yet.</p>
-          <button onClick={openAdd} style={{ color: '#d4af37', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px' }}>
-            Add your first item →
-          </button>
+          {selectedItem && (
+            <div className="bg-slate-800 rounded-lg p-6">
+              <h2 className="text-xl font-bold mb-4">Item Details</h2>
+              <img src={selectedItem.image_url} alt={selectedItem.title} className="w-full rounded mb-4" />
+              <div className="space-y-4">
+                <div><p className="text-slate-400 text-sm">Title</p><p className="text-white font-semibold">{selectedItem.title}</p></div>
+                <div><p className="text-slate-400 text-sm">Category</p><p className="text-white">{selectedItem.category}</p></div>
+                <div><p className="text-slate-400 text-sm">Description</p><p className="text-white text-sm">{selectedItem.description}</p></div>
+                <button onClick={() => handleDeleteItem(selectedItem.id)} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded">Delete</button>
+              </div>
+            </div>
+          )}
         </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '12px' }}>
-          {items.map((item, i) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.04 }}
-              style={{
-                backgroundColor: '#111',
-                border: '1px solid rgba(212,175,55,0.08)',
-                borderRadius: '6px',
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-              }}
-            >
-              {/* Thumbnail */}
-              <div style={{ width: '72px', height: '54px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
-                {item.image_url && (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={e => (e.currentTarget.style.display = 'none')}
-                  />
-                )}
-              </div>
-
-              {/* Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ color: '#f5f5f5', fontSize: '14px', fontWeight: '500', marginBottom: '3px' }}>{item.title}</p>
-                <p style={{ color: '#555', fontSize: '12px' }}>{item.description}</p>
-              </div>
-
-              {/* Category badge */}
-              <span style={{
-                padding: '3px 10px',
-                backgroundColor: 'rgba(212,175,55,0.08)',
-                border: '1px solid rgba(212,175,55,0.15)',
-                borderRadius: '20px',
-                color: '#d4af37',
-                fontSize: '11px',
-                flexShrink: 0,
-              }}>
-                {item.category}
-              </span>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                <button
-                  onClick={() => openEdit(item)}
-                  style={{ padding: '6px 14px', backgroundColor: 'transparent', border: '1px solid rgba(212,175,55,0.25)', color: '#d4af37', borderRadius: '3px', fontSize: '12px', cursor: 'pointer' }}
-                >
-                  Edit
-                </button>
-                {deleteConfirm === item.id ? (
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <span style={{ color: '#cc6666', fontSize: '12px' }}>Sure?</span>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      style={{ padding: '5px 12px', backgroundColor: 'rgba(180,40,40,0.3)', border: '1px solid rgba(180,40,40,0.4)', color: '#cc6666', borderRadius: '3px', fontSize: '12px', cursor: 'pointer' }}
-                    >
-                      Yes, delete
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      style={{ padding: '5px 10px', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#777', borderRadius: '3px', fontSize: '12px', cursor: 'pointer' }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setDeleteConfirm(item.id)}
-                    style={{ padding: '6px 14px', backgroundColor: 'transparent', border: '1px solid rgba(180,40,40,0.25)', color: '#cc6666', borderRadius: '3px', fontSize: '12px', cursor: 'pointer' }}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   )
 }

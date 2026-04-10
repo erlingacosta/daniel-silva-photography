@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, ServicePackage, Portfolio
+from models import User, ServicePackage, Portfolio, FaqItem, AlaCarteService
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -88,7 +88,48 @@ def seed_portfolios(db: Session):
         print(f"⚠️ Error seeding portfolios: {e}")
         db.rollback()
 
+def seed_faq(db: Session):
+    try:
+        if db.query(FaqItem).count() > 0:
+            return
+        
+        faqs = [
+            FaqItem(question="What is included in each package?", answer="Each package includes professional photography, edited high-resolution images, cloud backup, and gallery access. Premium packages include additional services like a second photographer or videography.", order=1, is_active=True),
+            FaqItem(question="How long does it take to receive photos?", answer="You can typically expect to receive edited photos within 4-6 weeks of your event. Rush processing is available for an additional fee.", order=2, is_active=True),
+            FaqItem(question="Do you offer videography?", answer="Yes, videography is included in the Premium Plus and Elite packages. Videography can also be added separately for $1,500.", order=3, is_active=True),
+            FaqItem(question="What is your cancellation policy?", answer="Cancellations made more than 60 days in advance receive a full refund. Cancellations within 60 days forfeit the deposit. Rescheduling is available within one year.", order=4, is_active=True),
+            FaqItem(question="Do you provide engagement shoots?", answer="Yes! Engagement shoots are available for $500 and are the perfect way to get comfortable in front of the camera before your big day.", order=5, is_active=True),
+            FaqItem(question="Can you accommodate multiple locations?", answer="Yes! We love shooting at multiple locations. The Elite package includes multiple location coverage. Additional locations can be added for $300 per location.", order=6, is_active=True),
+        ]
+        db.add_all(faqs)
+        db.commit()
+        print("✅ FAQ seeded")
+    except Exception as e:
+        print(f"⚠️ Error seeding FAQ: {e}")
+        db.rollback()
+
+def seed_ala_carte(db: Session):
+    try:
+        if db.query(AlaCarteService).count() > 0:
+            return
+        
+        services = [
+            AlaCarteService(name="Pre-wedding engagement shoot", description="60 minute engagement photo session", price=500.00, order=1, is_active=True),
+            AlaCarteService(name="Additional hours", description="Per hour", price=400.00, order=2, is_active=True),
+            AlaCarteService(name="Drone footage package", description="Aerial coverage and edited video", price=800.00, order=3, is_active=True),
+            AlaCarteService(name="Premium hardcover album", description="50-page heirloom quality album", price=600.00, order=4, is_active=True),
+            AlaCarteService(name="Rush delivery", description="Expedited photo delivery", price=400.00, order=5, is_active=True),
+        ]
+        db.add_all(services)
+        db.commit()
+        print("✅ A La Carte services seeded")
+    except Exception as e:
+        print(f"⚠️ Error seeding a la carte: {e}")
+        db.rollback()
+
 def seed_database(db: Session):
     seed_admin_user(db)
     seed_packages(db)
     seed_portfolios(db)
+    seed_faq(db)
+    seed_ala_carte(db)
