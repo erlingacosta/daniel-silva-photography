@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from datetime import datetime
 
 from database import get_db
-from models import Booking, User, Inquiry, Invoice, ServicePackage, ContactMessage, FaqItem, AlaCarteService, FeaturedIn
+from models import Booking, User, Inquiry, Invoice, ServicePackage, ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Portfolio
 from schemas import BookingResponse, InvoiceResponse
 from routers.auth import get_current_user
 
@@ -33,6 +33,80 @@ DEFAULT_ABOUT = {
     ],
 }
 
+# Pydantic Schemas
+class CreateFaqRequest(BaseModel):
+    question: str
+    answer: str
+    is_active: bool = True
+
+class CreateServiceRequest(BaseModel):
+    name: str
+    description: str = ""
+    price: float
+    is_active: bool = True
+
+class UpdateAboutRequest(BaseModel):
+    photographer_name: str
+    bio: str
+    photo_url: str = ""
+    events_photographed: int = 500
+    years_experience: int = 15
+    client_satisfaction: int = 100
+
+class PackageCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    deliverables: str
+    is_active: bool = True
+
+class PackageUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    deliverables: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class PackageResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    price: float
+    deliverables: Optional[str] = None
+    is_active: bool = True
+    created_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    role: str = "client"
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class UserPasswordReset(BaseModel):
+    password: str
+
+class UserAdminResponse(BaseModel):
+    id: int
+    email: str
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    role: str = "client"
+    is_active: bool = True
+    is_admin: bool = False
+    created_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
 router = APIRouter()
 
 @router.get("/dashboard")
@@ -41,7 +115,6 @@ async def get_admin_dashboard(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get admin dashboard stats"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -49,7 +122,6 @@ async def get_admin_dashboard(
     confirmed_bookings = db.query(Booking).filter(Booking.status == "confirmed").count()
     pending_inquiries = db.query(Inquiry).filter(Inquiry.status == "new").count()
     
-    # Calculate revenue
     paid_invoices = db.query(Invoice).filter(Invoice.status == "paid").all()
     total_revenue = sum(inv.amount for inv in paid_invoices)
     
@@ -67,7 +139,6 @@ async def get_all_bookings(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get all bookings (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -85,7 +156,6 @@ async def send_invoice(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Send invoice to client"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -93,7 +163,6 @@ async def send_invoice(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     
-    # Create invoice
     invoice_number = f"INV-{booking_id}-001"
     invoice = Invoice(
         booking_id=booking_id,
@@ -106,8 +175,6 @@ async def send_invoice(
     db.commit()
     db.refresh(invoice)
     
-    # In production, send email via SendGrid
-    
     return InvoiceResponse.model_validate(invoice)
 
 @router.post("/bookings/{booking_id}/mark-complete")
@@ -117,7 +184,6 @@ async def mark_booking_complete(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Mark booking as completed"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -138,7 +204,6 @@ async def get_revenue_report(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get revenue report"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -161,61 +226,60 @@ async def get_about_data(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get about section data"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     if ABOUT_FILE.exists():
         return json.loads(ABOUT_FILE.read_text())
     return DEFAULT_ABOUT
 
-@router.put("/about")
+@router.post("/about")
 async def update_about_data(
-    data: dict,
+    data: UpdateAboutRequest,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Update about section data"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    ABOUT_FILE.write_text(json.dumps(data, indent=2))
-    return {"message": "About section updated successfully"}
-
-# Package Management Schemas
-class PackageCreate(BaseModel):
-    name: str
-    description: str
-    price: float
-    deliverables: str  # JSON string
-    is_active: bool = True
-
-class PackageUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    price: Optional[float] = None
-    deliverables: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class PackageResponse(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    price: float
-    deliverables: Optional[str] = None
-    is_active: bool = True
-    created_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
+    about_data = {
+        "photographer_name": data.photographer_name,
+        "bio": data.bio,
+        "photo_url": data.photo_url,
+        "events_photographed": data.events_photographed,
+        "years_experience": data.years_experience,
+        "client_satisfaction": data.client_satisfaction,
+    }
+    ABOUT_FILE.write_text(json.dumps(about_data, indent=2))
+    return about_data
 
-# Package endpoints
+@router.put("/about")
+async def put_about_data(
+    data: UpdateAboutRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    about_data = {
+        "photographer_name": data.photographer_name,
+        "bio": data.bio,
+        "photo_url": data.photo_url,
+        "events_photographed": data.events_photographed,
+        "years_experience": data.years_experience,
+        "client_satisfaction": data.client_satisfaction,
+    }
+    ABOUT_FILE.write_text(json.dumps(about_data, indent=2))
+    return about_data
+
 @router.get("/packages", response_model=List[PackageResponse])
 async def get_all_packages(
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get all service packages (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -229,7 +293,6 @@ async def get_package(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get a single package by ID (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -246,7 +309,6 @@ async def create_package(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Create a new service package (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -272,7 +334,6 @@ async def update_package(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Update a service package (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -280,7 +341,6 @@ async def update_package(
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
     
-    # Update fields if provided
     if data.name is not None:
         package.name = data.name
     if data.description is not None:
@@ -304,7 +364,6 @@ async def delete_package(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Delete a service package (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -317,44 +376,12 @@ async def delete_package(
     
     return {"message": "Package deleted successfully"}
 
-
-# User Management Schemas
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
-    full_name: str
-    role: str = "client"  # admin or client
-
-class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    full_name: Optional[str] = None
-    role: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class UserPasswordReset(BaseModel):
-    password: str
-
-class UserAdminResponse(BaseModel):
-    id: int
-    email: str
-    username: Optional[str] = None
-    full_name: Optional[str] = None
-    role: str = "client"
-    is_active: bool = True
-    is_admin: bool = False
-    created_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
-
-# User Management Endpoints
 @router.get("/users", response_model=List[UserAdminResponse])
 async def list_users(
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get all users (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -368,7 +395,6 @@ async def get_user(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Get a single user by ID (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -385,28 +411,21 @@ async def create_user(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Create a new user (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    # Check if email already exists
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Generate username from email
     username = data.email.split("@")[0]
-    # Ensure unique username
     counter = 1
     base_username = username
     while db.query(User).filter(User.username == username).first():
         username = f"{base_username}{counter}"
         counter += 1
     
-    # Hash password
     hashed_password = pwd_context.hash(data.password)
-    
-    # Determine is_admin based on role
     is_admin = data.role == "admin"
     
     user = User(
@@ -433,7 +452,6 @@ async def update_user(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Update a user (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -441,7 +459,6 @@ async def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Check if email is being changed and if it's unique
     if data.email and data.email != user.email:
         existing = db.query(User).filter(User.email == data.email).first()
         if existing:
@@ -471,7 +488,6 @@ async def reset_user_password(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Reset user password (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -494,7 +510,6 @@ async def deactivate_user(
     db: Session = Depends(get_db)
 ):
     current_user = await get_current_user(authorization, db)
-    """Soft-delete a user (admin only) - marks as inactive"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -502,20 +517,14 @@ async def deactivate_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Prevent deletion of self
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
     
-    # Soft delete - mark as inactive
     user.is_active = False
     db.commit()
     
     return {"message": "User deactivated successfully"}
 
-
-
-
-# Contact Messages
 @router.get("/contact")
 async def get_contact_messages(
     authorization: str = Header(None),
@@ -539,7 +548,6 @@ async def get_contact_messages(
         for m in messages
     ]
 
-# FAQ Items
 @router.get("/faq")
 async def get_faq_items(
     authorization: str = Header(None),
@@ -557,9 +565,7 @@ async def get_faq_items(
 
 @router.post("/faq")
 async def create_faq_item(
-    question: str,
-    answer: str,
-    is_active: bool = True,
+    faq_data: CreateFaqRequest,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
@@ -567,7 +573,7 @@ async def create_faq_item(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    faq = FaqItem(question=question, answer=answer, is_active=is_active)
+    faq = FaqItem(question=faq_data.question, answer=faq_data.answer, is_active=faq_data.is_active)
     db.add(faq)
     db.commit()
     db.refresh(faq)
@@ -619,7 +625,6 @@ async def delete_faq_item(
     db.commit()
     return {"message": "FAQ deleted"}
 
-# A La Carte Services
 @router.get("/services")
 async def get_services(
     authorization: str = Header(None),
@@ -637,10 +642,7 @@ async def get_services(
 
 @router.post("/services")
 async def create_service(
-    name: str,
-    price: float,
-    description: str = "",
-    is_active: bool = True,
+    service_data: CreateServiceRequest,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
@@ -648,7 +650,7 @@ async def create_service(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    service = AlaCarteService(name=name, description=description, price=price, is_active=is_active)
+    service = AlaCarteService(name=service_data.name, description=service_data.description, price=service_data.price, is_active=service_data.is_active)
     db.add(service)
     db.commit()
     db.refresh(service)
@@ -703,8 +705,6 @@ async def delete_service(
     db.commit()
     return {"message": "Service deleted"}
 
-
-# Portfolio Management
 @router.get("/portfolio")
 async def get_portfolio_items(
     authorization: str = Header(None),
