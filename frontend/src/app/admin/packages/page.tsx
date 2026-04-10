@@ -37,19 +37,14 @@ export default function PackagesPage() {
   });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    fetchPackages();
-  }, [router]);
+    fetchPackages()
+  }, [])
+
 
   const fetchPackages = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('djs_token');
       const response = await fetch(`${API_URL}/admin/packages`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -100,7 +95,7 @@ export default function PackagesPage() {
 
   const handleSavePackage = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('djs_token');
       const url = isCreating
         ? `${API_URL}/admin/packages`
         : `${API_URL}/admin/packages/${selectedPackage?.id}`;
@@ -139,7 +134,7 @@ export default function PackagesPage() {
     if (!confirm('Are you sure you want to delete this package?')) return;
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('djs_token');
       const response = await fetch(`${API_URL}/admin/packages/${packageId}`, {
         method: 'DELETE',
         headers: {

@@ -24,17 +24,12 @@ export default function ContactPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
     fetchMessages()
-  }, [router])
+  }, [])
 
   const fetchMessages = async () => {
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/contact`, {
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -24,19 +24,14 @@ export default function FaqPage() {
   const [createData, setCreateData] = useState({ question: '', answer: '', is_active: true })
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
     fetchFaqs()
-  }, [router])
+  }, [])
+
 
   const fetchFaqs = async () => {
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/faq`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
@@ -59,7 +54,7 @@ export default function FaqPage() {
     }
 
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/faq`, {
         method: 'POST',
         headers: {
@@ -83,7 +78,7 @@ export default function FaqPage() {
   const handleUpdateFaq = async () => {
     if (!selectedFaq) return
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/faq/${selectedFaq.id}`, {
         method: 'PUT',
         headers: {
@@ -107,7 +102,7 @@ export default function FaqPage() {
   const handleDeleteFaq = async (id: number) => {
     if (!confirm('Delete this FAQ?')) return
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/faq/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },

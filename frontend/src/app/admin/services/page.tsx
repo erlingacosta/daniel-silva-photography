@@ -26,17 +26,12 @@ export default function ServicesPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
     fetchServices()
-  }, [router])
+  }, [])
 
   const fetchServices = async () => {
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/services`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
@@ -59,7 +54,7 @@ export default function ServicesPage() {
     }
 
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/services`, {
         method: 'POST',
         headers: {
@@ -83,7 +78,7 @@ export default function ServicesPage() {
   const handleUpdateService = async () => {
     if (!selectedService) return
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/services/${selectedService.id}`, {
         method: 'PUT',
         headers: {
@@ -107,7 +102,7 @@ export default function ServicesPage() {
   const handleDeleteService = async (id: number) => {
     if (!confirm('Delete this service?')) return
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/services/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },

@@ -45,19 +45,14 @@ export default function UsersPage() {
   });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    fetchUsers();
-  }, [router]);
+    fetchUsers()
+  }, [])
+
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('djs_token');
       const response = await fetch(`${API_URL}/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -94,7 +89,7 @@ export default function UsersPage() {
     if (!selectedUser) return;
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('djs_token');
       const response = await fetch(`${API_URL}/admin/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
@@ -125,7 +120,7 @@ export default function UsersPage() {
     }
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('djs_token');
       const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
         headers: {
@@ -154,7 +149,7 @@ export default function UsersPage() {
     if (!confirm('Are you sure you want to deactivate this user?')) return;
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('djs_token');
       const response = await fetch(`${API_URL}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {

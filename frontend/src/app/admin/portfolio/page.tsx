@@ -25,15 +25,10 @@ export default function PortfolioPage() {
   const [createData, setCreateData] = useState({ title: '', description: '', category: 'Weddings', image_url: '' })
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
     fetchItems()
-  }, [router])
+  }, [])
+
 
   const fetchItems = async () => {
     try {
@@ -86,7 +81,7 @@ export default function PortfolioPage() {
     }
 
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/portfolio`, {
         method: 'POST',
         headers: {
@@ -110,7 +105,7 @@ export default function PortfolioPage() {
   const handleDeleteItem = async (id: number) => {
     if (!confirm('Delete this portfolio item?')) return
     try {
-      const token = localStorage.getItem('access_token')
+      const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/portfolio/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
