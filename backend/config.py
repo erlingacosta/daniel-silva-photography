@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     INSTAGRAM_ACCESS_TOKEN: str = ""
     INSTAGRAM_BUSINESS_ACCOUNT_ID: str = ""
     
+    # DigitalOcean Spaces
+    DO_SPACES_KEY: str = ""
+    DO_SPACES_SECRET: str = ""
+    DO_SPACES_BUCKET: str = "dsphotography"
+    DO_SPACES_REGION: str = "nyc3"
+    DO_SPACES_ENDPOINT: str = "https://dsphotography.nyc3.digitaloceanspaces.com"
+    
     # App
     APP_NAME: str = "Daniel Silva Photography"
     DEBUG: bool = False
