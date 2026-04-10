@@ -74,7 +74,7 @@ export default function BookingCTA() {
             <Link href="/inquiry" className="button button-primary text-base px-10 py-4">
               Book Now
             </Link>
-            <Link href="#contact" className="button button-secondary text-base px-10 py-4">
+            <Link href="/contact" className="button button-secondary text-base px-10 py-4">
               Contact Us
             </Link>
           </div>
