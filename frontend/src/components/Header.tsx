@@ -56,7 +56,7 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <Link href="/booking" className="button button-primary text-sm px-6 py-2">
+          <Link href="/inquiry" className="button button-primary text-sm px-6 py-2">
             Book Now
           </Link>
           <Link
@@ -127,7 +127,7 @@ export default function Header() {
                 </motion.div>
               ))}
               <Link
-                href="/booking"
+                href="/inquiry"
                 className="button button-primary text-sm text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >

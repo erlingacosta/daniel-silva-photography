@@ -95,7 +95,7 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 1.7 }}
             className="flex gap-4 justify-center flex-wrap"
           >
-            <Link href="/booking" className="button button-primary px-10 py-4 text-base">
+            <Link href="/inquiry" className="button button-primary px-10 py-4 text-base">
               Book Your Event
             </Link>
             <Link href="#portfolio" className="button button-secondary px-10 py-4 text-base">

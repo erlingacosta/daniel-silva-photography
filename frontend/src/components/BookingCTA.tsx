@@ -71,7 +71,7 @@ export default function BookingCTA() {
           </p>
 
           <div className="flex gap-4 justify-center flex-wrap mb-16">
-            <Link href="/booking" className="button button-primary text-base px-10 py-4">
+            <Link href="/inquiry" className="button button-primary text-base px-10 py-4">
               Book Now
             </Link>
             <Link href="#contact" className="button button-secondary text-base px-10 py-4">

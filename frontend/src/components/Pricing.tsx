@@ -1,10 +1,19 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
-const packages = [
+interface Package {
+  id: number
+  name: string
+  price: number
+  description: string
+  deliverables: string
+  is_active: boolean
+}
+
+const defaultPackages = [
   {
     name: 'Signature',
     price: 4500,
@@ -58,6 +67,38 @@ const cardVariants = {
 }
 
 export default function Pricing() {
+  const [packages, setPackages] = useState<any[]>(defaultPackages)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const response = await fetch(`${API_URL}/api/packages`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data && data.length > 0) {
+            // Map API response to component format
+            const mapped = data.map((pkg: any, idx: number) => ({
+              name: pkg.name,
+              price: pkg.price,
+              duration: pkg.duration || `${idx === 0 ? '8' : idx === 1 ? '12' : '16'} hours`,
+              includes: pkg.deliverables ? pkg.deliverables.split('\n').filter((d: string) => d.trim()) : [],
+              featured: idx === 1,
+              id: pkg.id,
+            }))
+            setPackages(mapped)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch packages:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPackages()
+  }, [])
+
   return (
     <section id="pricing" className="py-24" style={{ backgroundColor: '#111111' }}>
       <div className="max-w-7xl mx-auto px-6">
@@ -129,7 +170,7 @@ export default function Pricing() {
               </ul>
 
               <Link
-                href="/booking"
+                href="/inquiry"
                 className="button button-primary w-full inline-block text-center text-sm"
               >
                 Book Now

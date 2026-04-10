@@ -22,6 +22,7 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [editData, setEditData] = useState<{
     email: string;
     full_name: string;
@@ -29,6 +30,17 @@ export default function UsersPage() {
   }>({
     email: '',
     full_name: '',
+    role: 'client',
+  });
+  const [createData, setCreateData] = useState<{
+    email: string;
+    full_name: string;
+    password: string;
+    role: string;
+  }>({
+    email: '',
+    full_name: '',
+    password: '',
     role: 'client',
   });
 
@@ -106,6 +118,38 @@ export default function UsersPage() {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!createData.email || !createData.password || !createData.full_name) {
+      setError('Email, password, and name are required');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_URL}/api/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create user');
+      }
+
+      const newUser = await response.json();
+      setUsers([...users, newUser]);
+      setCreateData({ email: '', full_name: '', password: '', role: 'client' });
+      setIsCreating(false);
+      setError('');
+    } catch (err) {
+      setError('Error creating user');
+      console.error('Error:', err);
+    }
+  };
+
   const handleDeactivateUser = async (userId: number) => {
     if (!confirm('Are you sure you want to deactivate this user?')) return;
 
@@ -167,9 +211,74 @@ export default function UsersPage() {
         <div className="grid md:grid-cols-3 gap-6">
           {/* Users List */}
           <div className="md:col-span-2">
+            {isCreating ? (
+              <div className="bg-slate-800 rounded-lg p-6 mb-6">
+                <h2 className="text-xl font-bold mb-4">Create New User</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={createData.email}
+                      onChange={(e) => setCreateData({ ...createData, email: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      value={createData.full_name}
+                      onChange={(e) => setCreateData({ ...createData, full_name: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-2">Password</label>
+                    <input
+                      type="password"
+                      value={createData.password}
+                      onChange={(e) => setCreateData({ ...createData, password: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-2">Role</label>
+                    <select
+                      value={createData.role}
+                      onChange={(e) => setCreateData({ ...createData, role: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white"
+                    >
+                      <option value="client">Client</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCreateUser}
+                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 rounded transition-colors"
+                    >
+                      Create User
+                    </button>
+                    <button
+                      onClick={() => setIsCreating(false)}
+                      className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div className="bg-slate-800 rounded-lg overflow-hidden">
-              <div className="p-6 border-b border-slate-700">
+              <div className="p-6 border-b border-slate-700 flex justify-between items-center">
                 <h2 className="text-xl font-bold">Users ({users.length})</h2>
+                <button
+                  onClick={() => setIsCreating(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors text-sm"
+                >
+                  + Create User
+                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
