@@ -4,16 +4,16 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
-interface Package {
-  id: number
+interface PricingPackage {
+  id?: number
   name: string
   price: number
-  description: string
-  deliverables: string
-  is_active: boolean
+  duration?: string
+  includes: string[]
+  featured?: boolean
 }
 
-const defaultPackages = [
+const defaultPackages: PricingPackage[] = [
   {
     name: 'Signature',
     price: 4500,
@@ -67,7 +67,7 @@ const cardVariants = {
 }
 
 export default function Pricing() {
-  const [packages, setPackages] = useState<any[]>(defaultPackages)
+  const [packages, setPackages] = useState<PricingPackage[]>(defaultPackages)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -78,14 +78,13 @@ export default function Pricing() {
         if (response.ok) {
           const data = await response.json()
           if (data && data.length > 0) {
-            // Map API response to component format
-            const mapped = data.map((pkg: any, idx: number) => ({
+            const mapped: PricingPackage[] = data.map((pkg: any, idx: number) => ({
+              id: pkg.id,
               name: pkg.name,
               price: pkg.price,
               duration: pkg.duration || `${idx === 0 ? '8' : idx === 1 ? '12' : '16'} hours`,
               includes: pkg.deliverables ? pkg.deliverables.split('\n').filter((d: string) => d.trim()) : [],
               featured: idx === 1,
-              id: pkg.id,
             }))
             setPackages(mapped)
           }
@@ -128,7 +127,7 @@ export default function Pricing() {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          {packages.map((pkg) => (
+          {packages.map((pkg: PricingPackage) => (
             <motion.div
               key={pkg.name}
               variants={cardVariants}
@@ -161,7 +160,7 @@ export default function Pricing() {
               <div className="w-full h-px mb-8" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.4), transparent)' }} />
 
               <ul className="text-left mb-8 space-y-3">
-                {pkg.includes.map((item, index) => (
+                {pkg.includes.map((item: string, index: number) => (
                   <li key={index} className="flex items-start gap-3">
                     <span className="mt-0.5 text-sm font-bold flex-shrink-0" style={{ color: '#d4af37' }}>✓</span>
                     <span className="text-sm" style={{ color: '#b0b0b0' }}>{item}</span>
@@ -195,13 +194,15 @@ export default function Pricing() {
             À La Carte Services
           </h3>
           <ul className="space-y-3">
-            {[
-              ['Pre-wedding engagement shoot', '$500'],
-              ['Additional hours (per hour)', '$400'],
-              ['Drone footage package', '$800'],
-              ['Premium hardcover album', '$600'],
-              ['Rush delivery', '$400'],
-            ].map(([service, price]) => (
+            {(
+              [
+                ['Pre-wedding engagement shoot', '$500'] as const,
+                ['Additional hours (per hour)', '$400'] as const,
+                ['Drone footage package', '$800'] as const,
+                ['Premium hardcover album', '$600'] as const,
+                ['Rush delivery', '$400'] as const,
+              ]
+            ).map(([service, price]: readonly [string, string]) => (
               <li key={service} className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)' }}>
                 <span className="text-sm" style={{ color: '#b0b0b0' }}>{service}</span>
                 <span className="text-sm font-semibold" style={{ color: '#d4af37' }}>{price}</span>
