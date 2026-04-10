@@ -37,7 +37,7 @@ export default function LoginPage() {
       localStorage.setItem('access_token', access_token)
       localStorage.setItem('user', JSON.stringify(user))
       // Redirect to admin dashboard on successful login
-      router.push('/admin')
+      window.location.href = '/admin'
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setServerError(err.response?.data?.detail || 'Invalid email or password.')
