@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from pathlib import Path
 import shutil
+from pydantic import BaseModel
 
 from database import get_db, engine, SessionLocal
 from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn
@@ -14,6 +15,13 @@ from db_seed import seed_database as run_seed_database
 from spaces import upload_to_spaces
 
 load_dotenv()
+
+# Pydantic schemas
+class ContactCreate(BaseModel):
+    name: str
+    email: str
+    phone: str
+    message: str
 
 # Create tables on startup
 def init_database():
@@ -73,6 +81,29 @@ def health():
 @app.get("/status")
 def status():
     return {"status": "Daniel Silva Photography API is running", "version": "1.0.0"}
+
+# Public About endpoint
+ABOUT_FILE = Path(__file__).parent / "about_data.json"
+
+DEFAULT_ABOUT = {
+    "photographer_name": "Daniel Silva",
+    "bio": "Daniel Silva is a passionate photographer dedicated to capturing life's most important moments. With over 15 years of experience, he specializes in wedding, quinceañera, and event photography.",
+    "photo_url": "",
+    "events_photographed": 500,
+    "years_experience": 15,
+    "client_satisfaction": 100,
+}
+
+@app.get("/about")
+def get_about():
+    """Get about section data (public endpoint)"""
+    try:
+        if ABOUT_FILE.exists():
+            return json.loads(ABOUT_FILE.read_text())
+        return DEFAULT_ABOUT
+    except Exception as e:
+        print(f"Error reading about data: {e}")
+        return DEFAULT_ABOUT
 
 # Portfolio endpoints
 @app.get("/portfolios")
@@ -278,14 +309,14 @@ def get_bookings(db: Session = Depends(get_db)):
         for b in bookings
     ]
 
-# Contact form endpoint
+# Contact form endpoint - FIXED to accept JSON body
 @app.post("/contact")
-def create_contact(name: str, email: str, phone: str, message: str, db: Session = Depends(get_db)):
+def create_contact(contact_data: ContactCreate, db: Session = Depends(get_db)):
     contact = ContactMessage(
-        name=name,
-        email=email,
-        phone=phone,
-        message=message,
+        name=contact_data.name,
+        email=contact_data.email,
+        phone=contact_data.phone,
+        message=contact_data.message,
         status="new"
     )
     db.add(contact)
@@ -323,6 +354,21 @@ def get_featured_in(db: Session = Depends(get_db)):
 # Upload endpoint - Spaces
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
+    try:
+        print(f"📤 Uploading file: {file.filename}")
+        url = await upload_to_spaces(file, folder="images")
+        print(f"✅ Upload successful: {url}")
+        return {"url": url, "filename": file.filename, "message": "Uploaded successfully"}
+    except Exception as e:
+        print(f"❌ Upload error: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+# API endpoint
+@app.post("/api/upload")
+async def api_upload_file(file: UploadFile = File(...)):
+    """Alias for /upload endpoint"""
     try:
         print(f"📤 Uploading file: {file.filename}")
         url = await upload_to_spaces(file, folder="images")
