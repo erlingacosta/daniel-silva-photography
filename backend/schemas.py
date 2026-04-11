@@ -59,10 +59,27 @@ class BookingResponse(BaseModel):
     event_date: Optional[datetime] = None
     event_location: Optional[str] = None
     package: Optional[str] = None
-    total_price: float = 0
-    status: str = "pending"
+    price: float = 0
+    status: str = "inquiry"
+    notes: Optional[str] = None
     contract_signed: bool = False
-    payment_status: str = "unpaid"
+    payment_status: str = "pending"
+    deliverables_ready: bool = False
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+class InquiryAdminResponse(BaseModel):
+    id: int
+    email: str
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    service_type: Optional[str] = None
+    event_date: Optional[datetime] = None
+    message: Optional[str] = None
+    status: str = "new"
     created_at: Optional[datetime] = None
 
     class Config:
@@ -159,8 +176,8 @@ class InvoiceResponse(BaseModel):
     invoice_number: str
     amount: float
     status: str
-    due_date: datetime
-    paid_date: Optional[datetime]
+    due_date: Optional[datetime] = None
+    paid_date: Optional[datetime] = None
     created_at: datetime
     
     class Config:

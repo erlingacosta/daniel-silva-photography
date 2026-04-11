@@ -121,6 +121,12 @@ class PortfolioItemUpdate(BaseModel):
     class Config:
         extra = "ignore"
 
+class BookingStatusUpdate(BaseModel):
+    status: str
+
+class InquiryStatusUpdate(BaseModel):
+    status: str
+
 
 router = APIRouter()
 
@@ -161,19 +167,152 @@ async def get_all_bookings(
     if status:
         query = query.filter(Booking.status == status)
 
-    bookings = query.all()
+    bookings = query.order_by(Booking.created_at.desc()).all()
     return [
         {
             "id": b.id,
-            "client_email": b.client.email if b.client else "Unknown",
-            "package": b.package.name if b.package else "Unknown",
+            "client_name": b.client.full_name if b.client else "",
+            "client_email": b.client.email if b.client else "",
+            "client_phone": b.client.phone if b.client else "",
+            "service_type": b.service_type or "",
             "event_date": b.event_date.isoformat() if b.event_date else None,
+            "event_location": b.event_location or "",
+            "package": b.package or "",
+            "price": b.price or 0,
             "status": b.status,
-            "total_price": b.total_price or 0,
+            "payment_status": b.payment_status,
+            "notes": b.notes or "",
             "created_at": b.created_at.isoformat() if b.created_at else None,
         }
         for b in bookings
     ]
+
+@router.patch("/bookings/{booking_id}/status")
+async def update_booking_status(
+    booking_id: int,
+    data: BookingStatusUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    booking.status = data.status
+    db.commit()
+    db.refresh(booking)
+
+    return {
+        "id": booking.id,
+        "client_name": booking.client.full_name if booking.client else "",
+        "client_email": booking.client.email if booking.client else "",
+        "client_phone": booking.client.phone if booking.client else "",
+        "service_type": booking.service_type or "",
+        "event_date": booking.event_date.isoformat() if booking.event_date else None,
+        "event_location": booking.event_location or "",
+        "package": booking.package or "",
+        "price": booking.price or 0,
+        "status": booking.status,
+        "payment_status": booking.payment_status,
+        "notes": booking.notes or "",
+        "created_at": booking.created_at.isoformat() if booking.created_at else None,
+    }
+
+@router.delete("/bookings/{booking_id}")
+async def delete_booking(
+    booking_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    db.delete(booking)
+    db.commit()
+    return {"message": "Booking deleted successfully"}
+
+@router.get("/inquiries")
+async def get_all_inquiries(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    inquiries = db.query(Inquiry).order_by(Inquiry.created_at.desc()).all()
+    return [
+        {
+            "id": i.id,
+            "email": i.email,
+            "full_name": i.full_name or "",
+            "phone": i.phone or "",
+            "service_type": i.service_type or "",
+            "event_date": i.event_date.isoformat() if i.event_date else None,
+            "message": i.message or "",
+            "status": i.status,
+            "created_at": i.created_at.isoformat() if i.created_at else None,
+        }
+        for i in inquiries
+    ]
+
+@router.patch("/inquiries/{inquiry_id}/status")
+async def update_inquiry_status(
+    inquiry_id: int,
+    data: InquiryStatusUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    inquiry = db.query(Inquiry).filter(Inquiry.id == inquiry_id).first()
+    if not inquiry:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+
+    inquiry.status = data.status
+    db.commit()
+    db.refresh(inquiry)
+
+    return {
+        "id": inquiry.id,
+        "email": inquiry.email,
+        "full_name": inquiry.full_name or "",
+        "phone": inquiry.phone or "",
+        "service_type": inquiry.service_type or "",
+        "event_date": inquiry.event_date.isoformat() if inquiry.event_date else None,
+        "message": inquiry.message or "",
+        "status": inquiry.status,
+        "created_at": inquiry.created_at.isoformat() if inquiry.created_at else None,
+    }
+
+@router.delete("/inquiries/{inquiry_id}")
+async def delete_inquiry(
+    inquiry_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    inquiry = db.query(Inquiry).filter(Inquiry.id == inquiry_id).first()
+    if not inquiry:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+
+    db.delete(inquiry)
+    db.commit()
+    return {"message": "Inquiry deleted successfully"}
 
 @router.post("/bookings/{booking_id}/send-invoice")
 async def send_invoice(
@@ -193,7 +332,7 @@ async def send_invoice(
     invoice = Invoice(
         booking_id=booking_id,
         invoice_number=invoice_number,
-        amount=booking.total_price,
+        amount=booking.price or 0,
         status="sent"
     )
     
@@ -256,7 +395,6 @@ async def get_about_data(
         raise HTTPException(status_code=403, detail="Admin access required")
     if ABOUT_FILE.exists():
         stored = json.loads(ABOUT_FILE.read_text())
-        # Normalize: if stored in old nested format, return default instead
         if "bio_paragraphs" in stored or "stats" in stored:
             return DEFAULT_ABOUT
         return stored
