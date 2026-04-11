@@ -18,19 +18,12 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ABOUT_FILE = Path(__file__).parent.parent / "about_data.json"
 
 DEFAULT_ABOUT = {
+    "photographer_name": "Daniel Silva",
+    "bio": "Daniel Silva is a passionate photographer dedicated to capturing life's most important moments. With over 15 years of experience, he specializes in wedding, quinceañera, and event photography.",
     "photo_url": "/images/daniel-silva.jpg",
-    "bio_heading": "Premium Photography",
-    "bio_since": "Since 2009",
-    "bio_paragraphs": [
-        "Daniel Silva is a passionate photographer dedicated to capturing life's most important moments. With over 15 years of experience, he specializes in wedding, quinceañera, and event photography.",
-        "His approach combines technical expertise with artistic vision, ensuring every photo tells a story. Daniel believes in building genuine relationships with clients to understand and deliver on their unique vision.",
-        "When not behind the camera, Daniel mentors emerging photographers and explores new locations for stunning backdrops across the Southwest.",
-    ],
-    "stats": [
-        {"value": "500+", "label": "Events Photographed"},
-        {"value": "15+", "label": "Years of Experience"},
-        {"value": "100%", "label": "Client Satisfaction"},
-    ],
+    "events_photographed": 500,
+    "years_experience": 15,
+    "client_satisfaction": 100,
 }
 
 # Pydantic Schemas
@@ -46,12 +39,15 @@ class CreateServiceRequest(BaseModel):
     is_active: bool = True
 
 class UpdateAboutRequest(BaseModel):
-    photographer_name: str
-    bio: str
-    photo_url: str = ""
-    events_photographed: int = 500
-    years_experience: int = 15
-    client_satisfaction: int = 100
+    photographer_name: Optional[str] = "Daniel Silva"
+    bio: Optional[str] = ""
+    photo_url: Optional[str] = ""
+    events_photographed: Optional[int] = 500
+    years_experience: Optional[int] = 15
+    client_satisfaction: Optional[int] = 100
+
+    class Config:
+        extra = "ignore"  # ignore unknown fields like id, created_at
 
 class PackageCreate(BaseModel):
     name: str
@@ -106,6 +102,19 @@ class UserAdminResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class PortfolioItemCreate(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    category: str = "Weddings"
+    image_url: str
+
+class PortfolioItemUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    image_url: Optional[str] = None
+
 
 router = APIRouter()
 
@@ -229,7 +238,11 @@ async def get_about_data(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     if ABOUT_FILE.exists():
-        return json.loads(ABOUT_FILE.read_text())
+        stored = json.loads(ABOUT_FILE.read_text())
+        # Normalize: if stored in old nested format, return default instead
+        if "bio_paragraphs" in stored or "stats" in stored:
+            return DEFAULT_ABOUT
+        return stored
     return DEFAULT_ABOUT
 
 @router.post("/about")
@@ -722,10 +735,7 @@ async def get_portfolio_items(
 
 @router.post("/portfolio")
 async def create_portfolio_item(
-    title: str,
-    description: str,
-    category: str,
-    image_url: str,
+    data: PortfolioItemCreate,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
@@ -734,17 +744,46 @@ async def create_portfolio_item(
         raise HTTPException(status_code=403, detail="Admin access required")
     
     item = Portfolio(
-        title=title,
-        description=description,
-        category=category,
-        image_url=image_url,
-        thumbnail_url=image_url,
+        title=data.title,
+        description=data.description or "",
+        category=data.category,
+        image_url=data.image_url,
+        thumbnail_url=data.image_url,
         order=db.query(Portfolio).count() + 1
     )
     db.add(item)
     db.commit()
     db.refresh(item)
-    return {"id": item.id, "title": item.title}
+    return {"id": item.id, "title": item.title, "description": item.description, "category": item.category, "image_url": item.image_url}
+
+@router.put("/portfolio/{item_id}")
+async def update_portfolio_item(
+    item_id: int,
+    data: PortfolioItemUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    item = db.query(Portfolio).filter(Portfolio.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    
+    if data.title is not None:
+        item.title = data.title
+    if data.description is not None:
+        item.description = data.description
+    if data.category is not None:
+        item.category = data.category
+    if data.image_url is not None:
+        item.image_url = data.image_url
+        item.thumbnail_url = data.image_url
+    
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "title": item.title, "description": item.description, "category": item.category, "image_url": item.image_url}
 
 @router.delete("/portfolio/{item_id}")
 async def delete_portfolio_item(
