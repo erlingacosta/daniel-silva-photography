@@ -128,11 +128,14 @@ class TestimonialResponse(BaseModel):
 # Inquiries
 class InquiryCreate(BaseModel):
     email: EmailStr
-    full_name: str
+    full_name: Optional[str] = ""
     phone: Optional[str] = None
-    service_type: ServiceType
-    event_date: Optional[datetime] = None
-    message: str
+    service_type: Optional[str] = "wedding"
+    event_date: Optional[str] = None
+    message: Optional[str] = ""
+
+    class Config:
+        extra = "ignore"
 
 class InquiryResponse(BaseModel):
     id: int

@@ -17,22 +17,16 @@ async def create_inquiry(
 ):
     """Create inquiry (public endpoint)"""
     
-    # Parse event_date if it's a string
+    # Parse event_date string to store as string (model column is String)
     event_date = None
     if inquiry.event_date:
-        if isinstance(inquiry.event_date, str):
-            try:
-                event_date = datetime.fromisoformat(inquiry.event_date.replace('Z', '+00:00'))
-            except:
-                event_date = None
-        else:
-            event_date = inquiry.event_date
-    
+        event_date = inquiry.event_date  # already a string, store as-is
+
     new_inquiry = Inquiry(
         email=inquiry.email,
-        full_name=inquiry.full_name,
+        name=inquiry.full_name,        # model uses 'name' column
         phone=inquiry.phone,
-        service_type=inquiry.service_type,
+        event_type=inquiry.service_type,  # model uses 'event_type' column
         event_date=event_date,
         message=inquiry.message,
         status="new"
@@ -42,7 +36,18 @@ async def create_inquiry(
     db.commit()
     db.refresh(new_inquiry)
     
-    return InquiryResponse.model_validate(new_inquiry)
+    # Build response manually to handle column name differences
+    return InquiryResponse(
+        id=new_inquiry.id,
+        email=new_inquiry.email,
+        full_name=new_inquiry.name,
+        phone=new_inquiry.phone,
+        service_type=new_inquiry.event_type,
+        event_date=None,
+        message=new_inquiry.message,
+        status=new_inquiry.status,
+        created_at=new_inquiry.created_at,
+    )
 
 @router.get("", response_model=List[InquiryResponse])
 async def get_inquiries(
@@ -59,7 +64,20 @@ async def get_inquiries(
         query = query.filter(Inquiry.status == status)
     
     inquiries = query.all()
-    return [InquiryResponse.model_validate(i) for i in inquiries]
+    return [
+        InquiryResponse(
+            id=i.id,
+            email=i.email,
+            full_name=i.name,
+            phone=i.phone,
+            service_type=i.event_type,
+            event_date=None,
+            message=i.message,
+            status=i.status,
+            created_at=i.created_at,
+        )
+        for i in inquiries
+    ]
 
 @router.patch("/{inquiry_id}")
 async def update_inquiry(
@@ -80,4 +98,14 @@ async def update_inquiry(
     db.commit()
     db.refresh(inquiry)
     
-    return InquiryResponse.model_validate(inquiry)
+    return InquiryResponse(
+        id=inquiry.id,
+        email=inquiry.email,
+        full_name=inquiry.name,
+        phone=inquiry.phone,
+        service_type=inquiry.event_type,
+        event_date=None,
+        message=inquiry.message,
+        status=inquiry.status,
+        created_at=inquiry.created_at,
+    )
