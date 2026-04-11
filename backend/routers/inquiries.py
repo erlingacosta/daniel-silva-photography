@@ -1,8 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict
 
 from database import get_db
 from models import Inquiry, User
@@ -11,7 +9,22 @@ from routers.auth import get_current_user
 
 router = APIRouter()
 
-@router.post("", response_model=InquiryResponse)
+
+def _inquiry_dict(i: Inquiry) -> dict:
+    return {
+        "id": i.id,
+        "email": i.email or "",
+        "full_name": i.name or "",        # DB col: name
+        "phone": i.phone or "",
+        "service_type": i.event_type or "",  # DB col: event_type
+        "event_date": i.event_date or None,   # varchar in DB
+        "message": i.message or "",
+        "status": i.status or "new",
+        "created_at": i.created_at.isoformat() if i.created_at else None,
+    }
+
+
+@router.post("")
 async def create_inquiry(
     inquiry: InquiryCreate,
     db: Session = Depends(get_db)
@@ -19,31 +32,20 @@ async def create_inquiry(
     """Create inquiry (public endpoint)"""
     new_inquiry = Inquiry(
         email=inquiry.email,
-        full_name=inquiry.full_name,
+        name=inquiry.full_name,          # DB col: name
         phone=inquiry.phone,
-        service_type=inquiry.service_type,
-        event_date=inquiry.event_date,
+        event_type=inquiry.service_type, # DB col: event_type
+        event_date=inquiry.event_date,   # varchar
         message=inquiry.message,
-        status="new"
+        status="new",
     )
-    
     db.add(new_inquiry)
     db.commit()
     db.refresh(new_inquiry)
-    
-    return InquiryResponse(
-        id=new_inquiry.id,
-        email=new_inquiry.email,
-        full_name=new_inquiry.full_name or "",
-        phone=new_inquiry.phone or "",
-        service_type=new_inquiry.service_type or "",
-        event_date=None,
-        message=new_inquiry.message or "",
-        status=new_inquiry.status,
-        created_at=new_inquiry.created_at,
-    )
+    return _inquiry_dict(new_inquiry)
 
-@router.get("", response_model=List[InquiryResponse])
+
+@router.get("")
 async def get_inquiries(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -52,26 +54,12 @@ async def get_inquiries(
     """Get all inquiries (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+
     query = db.query(Inquiry)
     if status:
         query = query.filter(Inquiry.status == status)
-    
-    inquiries = query.all()
-    return [
-        InquiryResponse(
-            id=i.id,
-            email=i.email,
-            full_name=i.full_name or "",
-            phone=i.phone or "",
-            service_type=i.service_type or "",
-            event_date=None,
-            message=i.message or "",
-            status=i.status,
-            created_at=i.created_at,
-        )
-        for i in inquiries
-    ]
+    return [_inquiry_dict(i) for i in query.all()]
+
 
 @router.patch("/{inquiry_id}")
 async def update_inquiry(
@@ -83,23 +71,12 @@ async def update_inquiry(
     """Update inquiry status (admin only)"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+
     inquiry = db.query(Inquiry).filter(Inquiry.id == inquiry_id).first()
     if not inquiry:
         raise HTTPException(status_code=404, detail="Inquiry not found")
-    
+
     inquiry.status = status
     db.commit()
     db.refresh(inquiry)
-    
-    return InquiryResponse(
-        id=inquiry.id,
-        email=inquiry.email,
-        full_name=inquiry.full_name or "",
-        phone=inquiry.phone or "",
-        service_type=inquiry.service_type or "",
-        event_date=None,
-        message=inquiry.message or "",
-        status=inquiry.status,
-        created_at=inquiry.created_at,
-    )
+    return _inquiry_dict(inquiry)

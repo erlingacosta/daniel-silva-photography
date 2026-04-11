@@ -7,156 +7,169 @@ Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    email = Column(String, nullable=False, unique=True, index=True)
+    username = Column(String, nullable=True, unique=True, index=True)
+    hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=True)
+    is_admin = Column(Boolean, default=False, nullable=True)
+    role = Column(String, default="user", nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
     phone = Column(String, nullable=True)
     profile_image = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
-    is_active = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False)
-    role = Column(String, default="user")  # user, admin
-    created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     bookings = relationship("Booking", back_populates="client")
+
 
 class Portfolio(Base):
     __tablename__ = "portfolios"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(Text)
-    category = Column(String)  # wedding, quinceañera, event, portrait
-    image_url = Column(String)
-    thumbnail_url = Column(String)
-    order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    title = Column(String, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    category = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
+    thumbnail_url = Column(String, nullable=True)
+    order = Column(Integer, default=0, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
 
 class Testimonial(Base):
     __tablename__ = "testimonials"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    client_name = Column(String)
-    event_type = Column(String)  # wedding, quinceañera, event, portrait
-    quote = Column(Text)
-    rating = Column(Float)
-    image_url = Column(String)
-    order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    client_name = Column(String, nullable=True)
+    event_type = Column(String, nullable=True)
+    quote = Column(Text, nullable=True)
+    rating = Column(Float, nullable=True)
+    image_url = Column(String, nullable=True)
+    order = Column(Integer, default=0, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
 
 class ServicePackage(Base):
     __tablename__ = "service_packages"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)  # Signature, Premium Plus, Elite
-    description = Column(Text)
-    price = Column(Float)
-    deliverables = Column(Text)  # JSON string of deliverables
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    name = Column(String, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    price = Column(Float, nullable=True)
+    deliverables = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
+    bookings = relationship("Booking", back_populates="package_rel")
+
 
 class Booking(Base):
     __tablename__ = "bookings"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(Integer, ForeignKey("users.id"))
-    service_type = Column(String)
-    event_date = Column(DateTime)
-    event_location = Column(String)
-    package = Column(String)
-    price = Column(Float)
-    status = Column(String, default="inquiry")  # inquiry, pending, confirmed, completed, cancelled
-    notes = Column(Text)
-    contract_signed = Column(Boolean, default=False)
+    client_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    package_id = Column(Integer, ForeignKey("service_packages.id"), nullable=True)
+    event_date = Column(DateTime, nullable=True)
+    event_type = Column(String, nullable=True)
+    event_location = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    status = Column(String, default="pending", nullable=True)
+    total_price = Column(Float, nullable=True)
+    deposit_paid = Column(Boolean, default=False, nullable=True)
     payment_intent_id = Column(String, nullable=True)
-    payment_status = Column(String, default="pending")
-    deliverables_ready = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    deliverables_ready = Column(Boolean, default=False, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
     client = relationship("User", back_populates="bookings")
+    package_rel = relationship("ServicePackage", back_populates="bookings")
     invoices = relationship("Invoice", back_populates="booking")
+
 
 class Inquiry(Base):
     __tablename__ = "inquiries"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String)
-    full_name = Column(String, nullable=True)
+    sender_id = Column(Integer, nullable=True)
+    email = Column(String, nullable=True)
+    name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
-    service_type = Column(String, nullable=True)
-    event_date = Column(DateTime, nullable=True)
+    event_type = Column(String, nullable=True)
+    event_date = Column(String, nullable=True)   # stored as VARCHAR in DB
     message = Column(Text, nullable=True)
-    status = Column(String, default="new")  # new, read, contacted, converted, dismissed
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    status = Column(String, default="new", nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
 
 class Invoice(Base):
     __tablename__ = "invoices"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("bookings.id"))
-    invoice_number = Column(String, unique=True, index=True)
-    amount = Column(Float)
-    status = Column(String, default="draft")  # draft, sent, paid, overdue, cancelled
+    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=True)
+    invoice_number = Column(String, nullable=True, unique=True, index=True)
+    amount = Column(Float, nullable=True)
+    status = Column(String, default="draft", nullable=True)
     due_date = Column(DateTime, nullable=True)
     paid_date = Column(DateTime, nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
     booking = relationship("Booking", back_populates="invoices")
+
 
 class NewsletterSubscriber(Base):
     __tablename__ = "newsletter_subscribers"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    subscribed_at = Column(DateTime, default=datetime.utcnow)
-    is_active = Column(Boolean, default=True)
+    email = Column(String, nullable=False, unique=True, index=True)
+    subscribed_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=True)
+
 
 class ContactMessage(Base):
     __tablename__ = "contact_messages"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    email = Column(String, index=True)
+    name = Column(String, nullable=True)
+    email = Column(String, nullable=True, index=True)
     phone = Column(String, nullable=True)
-    message = Column(Text)
-    status = Column(String, default="new")  # new, read, replied
-    created_at = Column(DateTime, default=datetime.utcnow)
+    message = Column(Text, nullable=True)
+    status = Column(String, default="unread", nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
 
 class FaqItem(Base):
     __tablename__ = "faq_items"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    question = Column(String, index=True)
-    answer = Column(Text)
-    order = Column(Integer, default=0)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    question = Column(String, nullable=True, index=True)
+    answer = Column(Text, nullable=True)
+    order = Column(Integer, default=0, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
 
 class AlaCarteService(Base):
     __tablename__ = "ala_carte_services"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    description = Column(Text)
-    price = Column(Float)
-    is_active = Column(Boolean, default=True)
-    order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    name = Column(String, nullable=True, index=True)
+    description = Column(Text, nullable=True)
+    price = Column(Float, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=True)
+    order = Column(Integer, default=0, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
 
 class FeaturedIn(Base):
     __tablename__ = "featured_in"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)  # Publication/website name
-    logo_url = Column(String)
-    url = Column(String, nullable=True)  # Link to publication
-    is_active = Column(Boolean, default=True)
-    order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    name = Column(String, nullable=True, index=True)
+    logo_url = Column(String, nullable=True)
+    url = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=True)
+    order = Column(Integer, default=0, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)

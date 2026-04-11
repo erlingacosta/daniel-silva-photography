@@ -340,7 +340,7 @@ def create_booking(data: BookingCreate, db: Session = Depends(get_db)):
         event_type=data.event_type,
         event_location=data.event_location,
         notes=data.notes,
-        total_price=package.price,
+        total_price=package.price if package else 0,
     )
     db.add(booking)
     db.commit()
@@ -359,7 +359,7 @@ def get_bookings(db: Session = Depends(get_db)):
         {
             "id": b.id,
             "client_email": b.client.email if b.client else "Unknown",
-            "package": b.package.name if b.package else "Unknown",
+            "package": b.package_rel.name if b.package_rel else "Unknown",
             "event_date": b.event_date.isoformat() if b.event_date else None,
             "status": b.status,
             "total_price": b.total_price,
