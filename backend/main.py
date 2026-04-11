@@ -439,14 +439,36 @@ async def api_upload_file(file: UploadFile = File(...)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
+# DigitalOcean ingress does NOT strip the /api prefix, so we wrap the app so
+# requests to /api/* are also handled (path rewritten to /* before routing).
+from starlette.types import ASGIApp, Receive, Scope, Send
+
+class ApiPrefixMiddleware:
+    """Makes /api/* equivalent to /* for DigitalOcean ingress compatibility."""
+    def __init__(self, inner: ASGIApp) -> None:
+        self.inner = inner
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] in ("http", "websocket"):
+            path: str = scope.get("path", "")
+            if path.startswith("/api/") or path == "/api":
+                new_path = path[4:] or "/"
+                scope = dict(scope)
+                scope["path"] = new_path
+                if "raw_path" in scope:
+                    scope["raw_path"] = new_path.encode("latin-1")
+        await self.inner(scope, receive, send)
+
+wrapper = ApiPrefixMiddleware(app)
+
 if __name__ == "__main__":
     import uvicorn
-    
-    print("🚀 Starting Daniel Silva Photography API...")
+
+    print("Starting Daniel Silva Photography API...")
     init_database()
     seed_database()
-    
-    print("✅ API ready at http://0.0.0.0:8000")
-    print("📖 Documentation: http://0.0.0.0:8000/docs")
-    
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    print("API ready at http://0.0.0.0:8000")
+    print("Documentation: http://0.0.0.0:8000/docs")
+
+    uvicorn.run(wrapper, host="0.0.0.0", port=8000)
