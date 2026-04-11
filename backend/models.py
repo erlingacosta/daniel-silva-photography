@@ -77,6 +77,10 @@ class Booking(Base):
     status = Column(String, default="pending", nullable=True)
     total_price = Column(Float, nullable=True)
     deposit_paid = Column(Boolean, default=False, nullable=True)
+    deposit_amount = Column(Float, default=0, nullable=True)
+    deposit_due_date = Column(String, nullable=True)
+    contract_notes = Column(Text, nullable=True)
+    internal_notes = Column(Text, nullable=True)
     payment_intent_id = Column(String, nullable=True)
     deliverables_ready = Column(Boolean, default=False, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
@@ -100,6 +104,7 @@ class Inquiry(Base):
     message = Column(Text, nullable=True)
     status = Column(String, default="new", nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    converted_to_booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=True)
 
 
 class Invoice(Base):

@@ -147,19 +147,61 @@ class ConvertInquiryRequest(BaseModel):
     client_phone: Optional[str] = None
     package_id: Optional[int] = None
     event_date: Optional[str] = None
+    event_type: Optional[str] = None
     event_location: Optional[str] = None
     total_price: Optional[float] = None
-    deposit_paid: Optional[bool] = False
-    notes: Optional[str] = None
+    deposit_amount: Optional[float] = 0.0
+    deposit_due_date: Optional[str] = None
+    contract_notes: Optional[str] = None
+    internal_notes: Optional[str] = None
 
 
 class BookingGeneralUpdate(BaseModel):
     model_config = ConfigDict(extra='ignore')
+    client_email: Optional[str] = None
+    package_id: Optional[int] = None
+    event_date: Optional[str] = None
+    event_type: Optional[str] = None
+    event_location: Optional[str] = None
     status: Optional[str] = None
     notes: Optional[str] = None
+    internal_notes: Optional[str] = None
+    contract_notes: Optional[str] = None
     total_price: Optional[float] = None
     deposit_paid: Optional[bool] = None
+    deposit_amount: Optional[float] = None
+    deposit_due_date: Optional[str] = None
     deliverables_ready: Optional[bool] = None
+
+
+class CreateBookingRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    client_email: Optional[str] = None
+    package_id: Optional[int] = None
+    event_date: Optional[str] = None
+    event_type: Optional[str] = None
+    event_location: Optional[str] = None
+    total_price: Optional[float] = None
+    deposit_amount: Optional[float] = 0.0
+    deposit_due_date: Optional[str] = None
+    contract_notes: Optional[str] = None
+    internal_notes: Optional[str] = None
+
+
+class DepositUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    deposit_paid: Optional[bool] = True
+    deposit_amount: Optional[float] = None
+
+
+class SendMessageRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    content: Optional[str] = ""
+
+
+class GalleryVisibilityUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    is_visible: Optional[bool] = True
 
 
 class CreateFaqRequest(BaseModel):
@@ -232,18 +274,26 @@ async def get_admin_dashboard(
 def _booking_dict(b: Booking) -> dict:
     return {
         "id": b.id,
+        "client_id": b.client_id,
         "client_name": b.client.full_name if b.client else "",
         "client_email": b.client.email if b.client else "",
         "client_phone": b.client.phone if b.client else "",
-        "package": b.package_rel.name if b.package_rel else "",
+        "package_id": b.package_id,
+        "package_name": b.package_rel.name if b.package_rel else "",
+        "package_price": b.package_rel.price if b.package_rel else 0,
         "event_type": b.event_type or "",
         "event_date": b.event_date.isoformat() if b.event_date else None,
         "event_location": b.event_location or "",
         "status": b.status or "pending",
         "total_price": b.total_price or 0,
         "deposit_paid": b.deposit_paid or False,
+        "deposit_amount": b.deposit_amount or 0,
+        "deposit_due_date": b.deposit_due_date or "",
+        "contract_notes": b.contract_notes or "",
+        "internal_notes": b.internal_notes or "",
         "notes": b.notes or "",
         "created_at": b.created_at.isoformat() if b.created_at else None,
+        "updated_at": b.updated_at.isoformat() if b.updated_at else None,
     }
 
 
@@ -285,8 +335,60 @@ async def update_booking_status(
     return _booking_dict(booking)
 
 
-@router.patch("/bookings/{booking_id}")
-async def update_booking(
+@router.post("/bookings")
+async def create_booking(
+    data: CreateBookingRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    import uuid
+    user = db.query(User).filter(User.email == data.client_email).first()
+    created_user = False
+    if not user:
+        user = User(
+            email=data.client_email,
+            username=data.client_email,
+            hashed_password=str(uuid.uuid4()),
+            is_active=True,
+            is_admin=False,
+            role="client",
+        )
+        db.add(user)
+        db.flush()
+        created_user = True
+
+    event_date_obj = None
+    if data.event_date:
+        try:
+            event_date_obj = datetime.fromisoformat(data.event_date)
+        except Exception:
+            pass
+
+    booking = Booking(
+        client_id=user.id,
+        package_id=data.package_id,
+        event_date=event_date_obj,
+        event_type=data.event_type or "",
+        event_location=data.event_location or "",
+        total_price=data.total_price or 0,
+        deposit_amount=data.deposit_amount or 0,
+        deposit_due_date=data.deposit_due_date or "",
+        contract_notes=data.contract_notes or "",
+        internal_notes=data.internal_notes or "",
+        status="pending",
+    )
+    db.add(booking)
+    db.commit()
+    db.refresh(booking)
+    return {**_booking_dict(booking), "created_user": created_user}
+
+
+@router.put("/bookings/{booking_id}")
+async def update_booking_full(
     booking_id: int,
     data: BookingGeneralUpdate,
     authorization: str = Header(None),
@@ -300,12 +402,56 @@ async def update_booking(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
+    if data.event_type is not None: booking.event_type = data.event_type
+    if data.event_location is not None: booking.event_location = data.event_location
+    if data.event_date is not None:
+        try:
+            booking.event_date = datetime.fromisoformat(data.event_date)
+        except Exception:
+            pass
+    if data.package_id is not None: booking.package_id = data.package_id
     if data.status is not None: booking.status = data.status
     if data.notes is not None: booking.notes = data.notes
+    if data.internal_notes is not None: booking.internal_notes = data.internal_notes
+    if data.contract_notes is not None: booking.contract_notes = data.contract_notes
     if data.total_price is not None: booking.total_price = data.total_price
     if data.deposit_paid is not None: booking.deposit_paid = data.deposit_paid
+    if data.deposit_amount is not None: booking.deposit_amount = data.deposit_amount
+    if data.deposit_due_date is not None: booking.deposit_due_date = data.deposit_due_date
     if data.deliverables_ready is not None: booking.deliverables_ready = data.deliverables_ready
 
+    db.commit()
+    db.refresh(booking)
+    return _booking_dict(booking)
+
+
+@router.patch("/bookings/{booking_id}")
+async def update_booking(
+    booking_id: int,
+    data: BookingGeneralUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    return await update_booking_full(booking_id, data, authorization, db)
+
+
+@router.patch("/bookings/{booking_id}/deposit")
+async def update_booking_deposit(
+    booking_id: int,
+    data: DepositUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if data.deposit_paid is not None: booking.deposit_paid = data.deposit_paid
+    if data.deposit_amount is not None: booking.deposit_amount = data.deposit_amount
     db.commit()
     db.refresh(booking)
     return _booking_dict(booking)
@@ -337,14 +483,15 @@ async def delete_booking(
 def _inquiry_dict(i: Inquiry) -> dict:
     return {
         "id": i.id,
+        "name": i.name or "",
         "email": i.email or "",
-        "full_name": i.name or "",
         "phone": i.phone or "",
-        "service_type": i.event_type or "",
+        "event_type": i.event_type or "",
         "event_date": i.event_date or None,   # stored as varchar
         "message": i.message or "",
         "status": i.status or "new",
         "created_at": i.created_at.isoformat() if i.created_at else None,
+        "converted_to_booking_id": i.converted_to_booking_id,
     }
 
 
@@ -477,21 +624,25 @@ async def convert_inquiry_to_booking(
         client_id=user.id,
         package_id=data.package_id,
         event_date=event_date_obj,
-        event_type=inquiry.event_type or "",
+        event_type=data.event_type or inquiry.event_type or "",
         event_location=data.event_location or "",
         total_price=data.total_price or 0.0,
-        deposit_paid=data.deposit_paid or False,
-        notes=data.notes or "",
+        deposit_amount=data.deposit_amount or 0.0,
+        deposit_due_date=data.deposit_due_date or "",
+        contract_notes=data.contract_notes or "",
+        internal_notes=data.internal_notes or "",
         status="pending",
     )
     db.add(booking)
+    db.flush()
 
     # Mark inquiry as converted
     inquiry.status = "converted"
+    inquiry.converted_to_booking_id = booking.id
     db.commit()
     db.refresh(booking)
 
-    return {"booking_id": booking.id, "user_id": user.id, "created": created_user}
+    return {"booking_id": booking.id, "user_id": user.id, "created_user": created_user}
 
 
 # --- About ---
@@ -1005,16 +1156,6 @@ async def delete_portfolio_item(
 # Client Management
 # ---------------------------------------------------------------------------
 
-class SendMessageRequest(BaseModel):
-    model_config = ConfigDict(extra='ignore')
-    content: Optional[str] = ""
-
-
-class GalleryVisibilityUpdate(BaseModel):
-    model_config = ConfigDict(extra='ignore')
-    is_visible: Optional[bool] = True
-
-
 @router.get("/clients")
 async def list_clients(
     authorization: str = Header(None),
@@ -1095,6 +1236,10 @@ async def get_client_detail(
             "status": booking.status or "pending",
             "total_price": booking.total_price or 0,
             "deposit_paid": booking.deposit_paid or False,
+            "deposit_amount": booking.deposit_amount or 0,
+            "deposit_due_date": booking.deposit_due_date or "",
+            "contract_notes": booking.contract_notes or "",
+            "internal_notes": booking.internal_notes or "",
             "notes": booking.notes or "",
         }
 
