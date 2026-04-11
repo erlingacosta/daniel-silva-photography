@@ -133,6 +133,33 @@ class InquiryStatusUpdate(BaseModel):
     status: Optional[str] = "new"
 
 
+class InquiryUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    status: Optional[str] = None
+
+
+class ConvertInquiryRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    package_id: Optional[int] = None
+    event_date: Optional[str] = None
+    event_location: Optional[str] = None
+    total_price: Optional[float] = None
+    deposit_paid: Optional[bool] = False
+    notes: Optional[str] = None
+
+
+class BookingGeneralUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    total_price: Optional[float] = None
+    deposit_paid: Optional[bool] = None
+    deliverables_ready: Optional[bool] = None
+
+
 class CreateFaqRequest(BaseModel):
     model_config = ConfigDict(extra='ignore')
     question: Optional[str] = ""
@@ -256,6 +283,32 @@ async def update_booking_status(
     return _booking_dict(booking)
 
 
+@router.patch("/bookings/{booking_id}")
+async def update_booking(
+    booking_id: int,
+    data: BookingGeneralUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if data.status is not None: booking.status = data.status
+    if data.notes is not None: booking.notes = data.notes
+    if data.total_price is not None: booking.total_price = data.total_price
+    if data.deposit_paid is not None: booking.deposit_paid = data.deposit_paid
+    if data.deliverables_ready is not None: booking.deliverables_ready = data.deliverables_ready
+
+    db.commit()
+    db.refresh(booking)
+    return _booking_dict(booking)
+
+
 @router.delete("/bookings/{booking_id}")
 async def delete_booking(
     booking_id: int,
@@ -344,6 +397,99 @@ async def delete_inquiry(
     db.delete(inquiry)
     db.commit()
     return {"message": "Inquiry deleted"}
+
+
+@router.patch("/inquiries/{inquiry_id}")
+async def update_inquiry(
+    inquiry_id: int,
+    data: InquiryUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    inquiry = db.query(Inquiry).filter(Inquiry.id == inquiry_id).first()
+    if not inquiry:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+
+    if data.status is not None:
+        inquiry.status = data.status
+    db.commit()
+    db.refresh(inquiry)
+    return _inquiry_dict(inquiry)
+
+
+@router.post("/inquiries/{inquiry_id}/convert")
+async def convert_inquiry_to_booking(
+    inquiry_id: int,
+    data: ConvertInquiryRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    inquiry = db.query(Inquiry).filter(Inquiry.id == inquiry_id).first()
+    if not inquiry:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+
+    # Find or create user by email
+    user = db.query(User).filter(User.email == data.client_email).first()
+    created_user = False
+    if not user:
+        import secrets
+        base_username = (data.client_email or "client").split("@")[0]
+        username = base_username
+        counter = 1
+        while db.query(User).filter(User.username == username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+        user = User(
+            email=data.client_email,
+            username=username,
+            full_name=data.client_name or "",
+            phone=data.client_phone or "",
+            hashed_password=pwd_context.hash(secrets.token_hex(16)),
+            is_active=True,
+            is_admin=False,
+            role="client",
+        )
+        db.add(user)
+        db.flush()
+        created_user = True
+
+    # Parse event_date
+    event_date_obj = None
+    if data.event_date:
+        try:
+            from datetime import datetime as dt
+            event_date_obj = dt.fromisoformat(data.event_date)
+        except Exception:
+            event_date_obj = None
+
+    # Create booking
+    booking = Booking(
+        client_id=user.id,
+        package_id=data.package_id,
+        event_date=event_date_obj,
+        event_type=inquiry.event_type or "",
+        event_location=data.event_location or "",
+        total_price=data.total_price or 0.0,
+        deposit_paid=data.deposit_paid or False,
+        notes=data.notes or "",
+        status="pending",
+    )
+    db.add(booking)
+
+    # Mark inquiry as converted
+    inquiry.status = "converted"
+    db.commit()
+    db.refresh(booking)
+
+    return {"booking_id": booking.id, "user_id": user.id, "created": created_user}
 
 
 # --- About ---

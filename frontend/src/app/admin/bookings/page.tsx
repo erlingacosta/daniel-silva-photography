@@ -1,8 +1,7 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { adminApi } from '@/lib/api'
+import { useEffect, useState } from "react"
+import { adminApi } from "@/lib/api"
 
 interface Booking {
   id: number
@@ -10,139 +9,176 @@ interface Booking {
   client_email: string
   client_phone: string
   package: string
-  service_type: string
+  event_type: string
   event_date: string | null
   event_location: string
   status: string
-  price: number
-  payment_status: string
+  total_price: number
+  deposit_paid: boolean
   notes: string
   created_at: string | null
 }
 
+const STATUSES = ["pending", "confirmed", "deposit_paid", "completed", "cancelled"]
+
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-900 text-yellow-100',
-  confirmed: 'bg-green-900 text-green-100',
-  completed: 'bg-blue-900 text-blue-100',
-  cancelled: 'bg-red-900 text-red-100',
-  inquiry: 'bg-gray-700 text-gray-300',
+  pending: "bg-yellow-100 text-yellow-800",
+  confirmed: "bg-blue-100 text-blue-800",
+  deposit_paid: "bg-purple-100 text-purple-800",
+  completed: "bg-green-100 text-green-800",
+  cancelled: "bg-red-100 text-red-800",
 }
 
-const BOOKING_STATUSES = ['inquiry', 'pending', 'confirmed', 'completed', 'cancelled']
-
-export default function BookingsAdmin() {
+export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [filtered, setFiltered] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [error, setError] = useState("")
+  const [editingNotes, setEditingNotes] = useState<Record<number, string>>({})
+  const [savingNotes, setSavingNotes] = useState<Record<number, boolean>>({})
 
-  useEffect(() => { fetchBookings() }, [])
-
-  const fetchBookings = async () => {
+  const load = async () => {
+    setLoading(true)
     try {
-      const res = await adminApi.get('/admin/bookings')
+      const res = await adminApi.get("/admin/bookings")
       setBookings(res.data)
-      setFiltered(res.data)
-      setError('')
-    } catch (err) {
-      setError('Error loading bookings')
-      console.error(err)
+    } catch {
+      setError("Failed to load bookings")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleStatusFilter = (status: string) => {
-    setStatusFilter(status)
-    setFiltered(status === 'all' ? bookings : bookings.filter(b => b.status === status))
-  }
+  useEffect(() => { load() }, [])
 
-  const handleStatusChange = async (id: number, status: string) => {
+  const updateStatus = async (id: number, status: string) => {
     try {
-      const res = await adminApi.patch(`/admin/bookings/${id}/status`, { status })
-      const updated = res.data
-      setBookings(prev => prev.map(b => b.id === id ? updated : b))
-      setFiltered(prev => prev.map(b => b.id === id ? updated : b))
-    } catch (err) {
-      alert('Failed to update status')
-      console.error(err)
+      const res = await adminApi.patch(`/admin/bookings/${id}`, { status })
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: res.data.status } : b))
+    } catch {
+      alert("Failed to update status")
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Delete this booking? This cannot be undone.')) return
+  const saveNotes = async (id: number) => {
+    const notes = editingNotes[id]
+    if (notes === undefined) return
+    setSavingNotes(prev => ({ ...prev, [id]: true }))
+    try {
+      await adminApi.patch(`/admin/bookings/${id}`, { notes })
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, notes } : b))
+      setEditingNotes(prev => { const n = { ...prev }; delete n[id]; return n })
+    } catch {
+      alert("Failed to save notes")
+    } finally {
+      setSavingNotes(prev => ({ ...prev, [id]: false }))
+    }
+  }
+
+  const deleteBooking = async (id: number) => {
+    if (!confirm("Delete this booking? This cannot be undone.")) return
     try {
       await adminApi.delete(`/admin/bookings/${id}`)
       setBookings(prev => prev.filter(b => b.id !== id))
-      setFiltered(prev => prev.filter(b => b.id !== id))
-    } catch (err) {
-      alert('Failed to delete booking')
-      console.error(err)
+    } catch {
+      alert("Failed to delete booking")
     }
   }
 
-  if (loading) return <div className="p-8 text-center text-gray-400"><p>Loading bookings...</p></div>
+  const fmt = (s: string | null) => s ? new Date(s).toLocaleDateString() : "—"
+
+  if (loading) return <div className="p-8 text-gray-500">Loading bookings...</div>
+  if (error) return <div className="p-8 text-red-500">{error}</div>
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Bookings</h1>
-        <Link href="/admin" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors">← Back to Dashboard</Link>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Bookings</h1>
 
-      {error && <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded text-red-100">{error}</div>}
-
-      <div className="mb-6 flex gap-2 flex-wrap">
-        {['all', ...BOOKING_STATUSES].map(s => (
-          <button key={s} onClick={() => handleStatusFilter(s)}
-            className={`px-4 py-2 rounded transition-colors capitalize ${statusFilter === s ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}>
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-slate-800 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-700">
-              <tr>
-                {['Name', 'Email', 'Phone', 'Package', 'Service Type', 'Event Date', 'Location', 'Status', 'Price', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700">
-              {filtered.map(b => (
-                <tr key={b.id} className="hover:bg-slate-700 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">{b.client_name || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{b.client_email || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{b.client_phone || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{b.package || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap capitalize">{b.service_type || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{b.event_date ? new Date(b.event_date).toLocaleDateString() : '—'}</td>
-                  <td className="px-4 py-3">{b.event_location || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${STATUS_COLORS[b.status] || 'bg-gray-700 text-gray-300'}`}>{b.status}</span>
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+            <tr>
+              {[
+                "Client","Email","Package","Event Date","Event Type",
+                "Location","Status","Price","Deposit","Created","Notes","Actions"
+              ].map(h => (
+                <th key={h} className="px-3 py-3 text-left font-medium whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {bookings.length === 0 && (
+              <tr><td colSpan={12} className="px-4 py-8 text-center text-gray-400">No bookings found</td></tr>
+            )}
+            {bookings.map(b => {
+              const isEditingNotes = editingNotes[b.id] !== undefined
+              const notesValue = isEditingNotes ? editingNotes[b.id] : b.notes
+              return (
+                <tr key={b.id} className="hover:bg-gray-50 align-top">
+                  <td className="px-3 py-3 font-medium whitespace-nowrap">{b.client_name || "—"}</td>
+                  <td className="px-3 py-3 text-gray-600 whitespace-nowrap">{b.client_email || "—"}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">{b.package || "—"}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">{fmt(b.event_date)}</td>
+                  <td className="px-3 py-3 capitalize whitespace-nowrap">{b.event_type || "—"}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">{b.event_location || "—"}</td>
+                  <td className="px-3 py-3">
+                    <select
+                      value={b.status}
+                      onChange={e => updateStatus(b.id, e.target.value)}
+                      className={`text-xs rounded-full px-2 py-1 border-0 font-medium cursor-pointer ${STATUS_COLORS[b.status] || "bg-gray-100 text-gray-700"}`}
+                    >
+                      {STATUSES.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">${(b.price || 0).toFixed(2)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex gap-2 items-center">
-                      <select value={b.status} onChange={e => handleStatusChange(b.id, e.target.value)}
-                        className="bg-slate-600 text-white text-xs rounded px-2 py-1 border border-slate-500">
-                        {BOOKING_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <button onClick={() => handleDelete(b.id)} className="px-2 py-1 bg-red-800 hover:bg-red-700 text-white text-xs rounded transition-colors">Delete</button>
-                    </div>
+                  <td className="px-3 py-3 whitespace-nowrap">${(b.total_price || 0).toLocaleString()}</td>
+                  <td className="px-3 py-3 text-center">
+                    {b.deposit_paid ? (
+                      <span className="text-green-600 font-medium">Yes</span>
+                    ) : (
+                      <span className="text-gray-400">No</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-gray-500">{fmt(b.created_at)}</td>
+                  <td className="px-3 py-3 min-w-[200px]">
+                    <textarea
+                      rows={2}
+                      className="w-full border rounded px-2 py-1 text-xs resize-none"
+                      value={notesValue || ""}
+                      onChange={e => setEditingNotes(prev => ({ ...prev, [b.id]: e.target.value }))}
+                    />
+                    {isEditingNotes && (
+                      <div className="flex gap-1 mt-1">
+                        <button
+                          onClick={() => saveNotes(b.id)}
+                          disabled={savingNotes[b.id]}
+                          className="px-2 py-0.5 text-xs bg-blue-600 text-white rounded disabled:opacity-50"
+                        >
+                          {savingNotes[b.id] ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={() => setEditingNotes(prev => { const n = { ...prev }; delete n[b.id]; return n })}
+                          className="px-2 py-0.5 text-xs bg-gray-200 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap">
+                    <button
+                      onClick={() => deleteBooking(b.id)}
+                      className="px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
-
-      {filtered.length === 0 && <div className="mt-8 p-8 text-center text-gray-400"><p>No bookings found</p></div>}
     </div>
   )
 }

@@ -1,13 +1,12 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { adminApi } from '@/lib/api'
+import { useEffect, useState } from "react"
+import { adminApi } from "@/lib/api"
 
 interface Inquiry {
   id: number
-  email: string
   full_name: string
+  email: string
   phone: string
   service_type: string
   event_date: string | null
@@ -16,130 +15,299 @@ interface Inquiry {
   created_at: string | null
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-red-900 text-red-100',
-  read: 'bg-gray-700 text-gray-300',
-  contacted: 'bg-yellow-900 text-yellow-100',
-  converted: 'bg-green-900 text-green-100',
-  dismissed: 'bg-slate-700 text-slate-300',
+interface Package {
+  id: number
+  name: string
+  price: number
 }
 
-const INQUIRY_STATUSES = ['new', 'read', 'contacted', 'converted', 'dismissed']
+interface ConvertForm {
+  client_name: string
+  client_email: string
+  client_phone: string
+  package_id: number | ""
+  event_date: string
+  event_location: string
+  total_price: number | ""
+  deposit_paid: boolean
+  notes: string
+}
 
-export default function InquiriesAdmin() {
+const STATUS_BADGES: Record<string, string> = {
+  new: "bg-blue-100 text-blue-800",
+  read: "bg-gray-100 text-gray-700",
+  contacted: "bg-yellow-100 text-yellow-800",
+  converted: "bg-green-100 text-green-800",
+  dismissed: "bg-red-100 text-red-700",
+}
+
+export default function AdminInquiriesPage() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
-  const [filtered, setFiltered] = useState<Inquiry[]>([])
+  const [packages, setPackages] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [error, setError] = useState("")
+  const [converting, setConverting] = useState<Inquiry | null>(null)
+  const [form, setForm] = useState<ConvertForm>({
+    client_name: "",
+    client_email: "",
+    client_phone: "",
+    package_id: "",
+    event_date: "",
+    event_location: "",
+    total_price: "",
+    deposit_paid: false,
+    notes: "",
+  })
+  const [submitError, setSubmitError] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => { fetchInquiries() }, [])
-
-  const fetchInquiries = async () => {
+  const load = async () => {
+    setLoading(true)
     try {
-      const res = await adminApi.get('/admin/inquiries')
-      setInquiries(res.data)
-      setFiltered(res.data)
-      setError('')
-    } catch (err) {
-      setError('Error loading inquiries')
-      console.error(err)
+      const [inqRes, pkgRes] = await Promise.all([
+        adminApi.get("/admin/inquiries"),
+        adminApi.get("/admin/packages"),
+      ])
+      setInquiries(inqRes.data)
+      setPackages(pkgRes.data)
+    } catch {
+      setError("Failed to load inquiries")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleStatusFilter = (status: string) => {
-    setStatusFilter(status)
-    setFiltered(status === 'all' ? inquiries : inquiries.filter(i => i.status === status))
-  }
+  useEffect(() => { load() }, [])
 
-  const handleStatusChange = async (id: number, status: string) => {
+  const patchStatus = async (id: number, status: string) => {
     try {
-      const res = await adminApi.patch(`/admin/inquiries/${id}/status`, { status })
-      const updated = res.data
-      setInquiries(prev => prev.map(i => i.id === id ? updated : i))
-      setFiltered(prev => prev.map(i => i.id === id ? updated : i))
-    } catch (err) {
-      alert('Failed to update status')
-      console.error(err)
+      const res = await adminApi.patch(`/admin/inquiries/${id}`, { status })
+      setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: res.data.status } : i))
+    } catch {
+      alert("Failed to update status")
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Delete this inquiry? This cannot be undone.')) return
+  const openConvert = (inquiry: Inquiry) => {
+    setConverting(inquiry)
+    setSubmitError("")
+    setForm({
+      client_name: inquiry.full_name || "",
+      client_email: inquiry.email || "",
+      client_phone: inquiry.phone || "",
+      package_id: "",
+      event_date: inquiry.event_date || "",
+      event_location: "",
+      total_price: "",
+      deposit_paid: false,
+      notes: "",
+    })
+  }
+
+  const submitConvert = async () => {
+    if (!converting) return
+    setSubmitting(true)
+    setSubmitError("")
     try {
-      await adminApi.delete(`/admin/inquiries/${id}`)
-      setInquiries(prev => prev.filter(i => i.id !== id))
-      setFiltered(prev => prev.filter(i => i.id !== id))
-    } catch (err) {
-      alert('Failed to delete inquiry')
-      console.error(err)
+      await adminApi.post(`/admin/inquiries/${converting.id}/convert`, {
+        ...form,
+        package_id: form.package_id === "" ? null : Number(form.package_id),
+        total_price: form.total_price === "" ? 0 : Number(form.total_price),
+      })
+      setInquiries(prev => prev.map(i => i.id === converting.id ? { ...i, status: "converted" } : i))
+      setConverting(null)
+    } catch (e: any) {
+      setSubmitError(e?.response?.data?.detail || "Failed to convert inquiry")
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  if (loading) return <div className="p-8 text-center text-gray-400"><p>Loading inquiries...</p></div>
+  const fmt = (s: string | null) => s ? new Date(s).toLocaleDateString() : "—"
+
+  if (loading) return <div className="p-8 text-gray-500">Loading inquiries...</div>
+  if (error) return <div className="p-8 text-red-500">{error}</div>
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Inquiries</h1>
-        <Link href="/admin" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors">← Back to Dashboard</Link>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Inquiries</h1>
 
-      {error && <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded text-red-100">{error}</div>}
-
-      <div className="mb-6 flex gap-2 flex-wrap">
-        {['all', ...INQUIRY_STATUSES].map(s => (
-          <button key={s} onClick={() => handleStatusFilter(s)}
-            className={`px-4 py-2 rounded transition-colors capitalize ${statusFilter === s ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}>
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-slate-800 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-700">
-              <tr>
-                {['Name', 'Email', 'Phone', 'Service Type', 'Event Date', 'Message', 'Status', 'Date Submitted', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700">
-              {filtered.map(inq => (
-                <tr key={inq.id} className="hover:bg-slate-700 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">{inq.full_name || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{inq.email}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{inq.phone || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap capitalize">{inq.service_type || '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{inq.event_date ? new Date(inq.event_date).toLocaleDateString() : '—'}</td>
-                  <td className="px-4 py-3 max-w-xs">
-                    <span title={inq.message}>{inq.message ? inq.message.slice(0, 60) + (inq.message.length > 60 ? '…' : '') : '—'}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${STATUS_COLORS[inq.status] || 'bg-gray-700 text-gray-300'}`}>{inq.status}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-gray-400">{inq.created_at ? new Date(inq.created_at).toLocaleDateString() : '—'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex gap-2 items-center">
-                      <select value={inq.status} onChange={e => handleStatusChange(inq.id, e.target.value)}
-                        className="bg-slate-600 text-white text-xs rounded px-2 py-1 border border-slate-500">
-                        {INQUIRY_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <button onClick={() => handleDelete(inq.id)} className="px-2 py-1 bg-red-800 hover:bg-red-700 text-white text-xs rounded transition-colors">Delete</button>
-                    </div>
-                  </td>
-                </tr>
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+            <tr>
+              {["Name","Email","Phone","Event Type","Event Date","Status","Created At","Actions"].map(h => (
+                <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {inquiries.length === 0 && (
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No inquiries found</td></tr>
+            )}
+            {inquiries.map(inq => (
+              <tr key={inq.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 font-medium">{inq.full_name || "—"}</td>
+                <td className="px-4 py-3">{inq.email || "—"}</td>
+                <td className="px-4 py-3">{inq.phone || "—"}</td>
+                <td className="px-4 py-3 capitalize">{inq.service_type || "—"}</td>
+                <td className="px-4 py-3">{inq.event_date || "—"}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_BADGES[inq.status] || "bg-gray-100 text-gray-600"}`}>
+                    {inq.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-gray-500">{fmt(inq.created_at)}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    {inq.status !== "read" && inq.status !== "converted" && (
+                      <button
+                        onClick={() => patchStatus(inq.id, "read")}
+                        className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                      >
+                        Mark Read
+                      </button>
+                    )}
+                    {inq.status !== "contacted" && inq.status !== "converted" && (
+                      <button
+                        onClick={() => patchStatus(inq.id, "contacted")}
+                        className="px-2 py-1 text-xs bg-yellow-100 hover:bg-yellow-200 rounded"
+                      >
+                        Mark Contacted
+                      </button>
+                    )}
+                    {inq.status !== "converted" && (
+                      <button
+                        onClick={() => openConvert(inq)}
+                        className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded"
+                      >
+                        Convert to Booking
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {filtered.length === 0 && <div className="mt-8 p-8 text-center text-gray-400"><p>No inquiries found</p></div>}
+      {/* Convert to Booking Modal */}
+      {converting && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold mb-4">Convert to Booking</h2>
+              {submitError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">{submitError}</div>
+              )}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.client_name}
+                    onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Client Email</label>
+                  <input
+                    type="email"
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.client_email}
+                    onChange={e => setForm(f => ({ ...f, client_email: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Client Phone</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.client_phone}
+                    onChange={e => setForm(f => ({ ...f, client_phone: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Package</label>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.package_id}
+                    onChange={e => setForm(f => ({ ...f, package_id: e.target.value === "" ? "" : Number(e.target.value) }))}
+                  >
+                    <option value="">Select a package...</option>
+                    {packages.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} — ${p.price}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Date</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.event_date}
+                    onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Location</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.event_location}
+                    onChange={e => setForm(f => ({ ...f, event_location: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.total_price}
+                    onChange={e => setForm(f => ({ ...f, total_price: e.target.value === "" ? "" : Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="deposit_paid"
+                    checked={form.deposit_paid}
+                    onChange={e => setForm(f => ({ ...f, deposit_paid: e.target.checked }))}
+                    className="rounded"
+                  />
+                  <label htmlFor="deposit_paid" className="text-sm font-medium text-gray-700">Deposit Paid</label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    rows={3}
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={form.notes}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setConverting(null)}
+                  className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitConvert}
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+                >
+                  {submitting ? "Converting..." : "Create Booking"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
