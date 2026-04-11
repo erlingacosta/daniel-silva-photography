@@ -25,10 +25,10 @@ export default function PortfolioPage() {
   const [createData, setCreateData] = useState({ title: '', description: '', category: 'Weddings', image_url: '' })
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
   useEffect(() => {
     fetchItems()
   }, [])
-
 
   const fetchItems = async () => {
     try {
@@ -48,27 +48,40 @@ export default function PortfolioPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, forCreate: boolean) => {
     if (!e.target.files?.[0]) return
     setUploadingImage(true)
+    setError('')
 
     try {
+      const file = e.target.files[0]
+      console.log(`Uploading image: ${file.name} (${file.size} bytes)`)
+      
       const formData = new FormData()
-      formData.append('file', e.target.files[0])
+      formData.append('file', file)
 
       const response = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         body: formData,
       })
 
-      if (!response.ok) throw new Error('Upload failed')
-      const { url } = await response.json()
-
+      console.log(`Upload response status: ${response.status}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Upload error: ${errorText}`)
+        throw new Error(`Upload failed (${response.status}): ${errorText}`)
+      }
+      
+      const data = await response.json()
+      console.log(`Upload successful: ${data.url}`)
+      
       if (forCreate) {
-        setCreateData({ ...createData, image_url: url })
+        setCreateData({ ...createData, image_url: data.url })
       } else {
-        setEditData({ ...editData, image_url: url })
+        setEditData({ ...editData, image_url: data.url })
       }
     } catch (err) {
-      setError('Image upload failed')
-      console.error(err)
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      setError(`Image upload failed: ${errorMsg}`)
+      console.error('Upload error:', err)
     } finally {
       setUploadingImage(false)
     }
@@ -102,104 +115,217 @@ export default function PortfolioPage() {
     }
   }
 
+  const handleUpdateItem = async () => {
+    if (!selectedItem) return
+    try {
+      const token = localStorage.getItem('djs_token')
+      const response = await fetch(`${API_URL}/admin/portfolio/${selectedItem.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editData),
+      })
+      if (!response.ok) throw new Error('Failed to update item')
+      const updated = await response.json()
+      setItems(items.map(i => i.id === updated.id ? updated : i))
+      setIsEditing(false)
+      setSelectedItem(null)
+      setError('')
+    } catch (err) {
+      setError('Error updating portfolio item')
+      console.error(err)
+    }
+  }
+
   const handleDeleteItem = async (id: number) => {
-    if (!confirm('Delete this portfolio item?')) return
+    if (!confirm('Delete this item?')) return
     try {
       const token = localStorage.getItem('djs_token')
       const response = await fetch(`${API_URL}/admin/portfolio/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       })
-      if (!response.ok) throw new Error('Failed to delete')
+      if (!response.ok) throw new Error('Failed to delete item')
       setItems(items.filter(i => i.id !== id))
-      if (selectedItem?.id === id) setSelectedItem(null)
+      setError('')
     } catch (err) {
-      setError('Error deleting item')
+      setError('Error deleting portfolio item')
       console.error(err)
     }
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-900 text-white p-8"><p className="text-center">Loading...</p></div>
+    return <div className="p-8 text-center">Loading...</div>
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Portfolio Management</h1>
-            <p className="text-slate-400">Manage portfolio items</p>
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Portfolio</h1>
+        <Link href="/admin" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors">
+          ← Back to Dashboard
+        </Link>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded text-red-100">
+          {error}
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Items List */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Items</h2>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {items.map(item => (
+              <div
+                key={item.id}
+                onClick={() => {
+                  setSelectedItem(item)
+                  setEditData(item)
+                  setIsEditing(true)
+                }}
+                className="p-4 bg-slate-700 rounded cursor-pointer hover:bg-slate-600 transition-colors"
+              >
+                <p className="font-semibold">{item.title}</p>
+                <p className="text-sm text-slate-300">{item.category}</p>
+              </div>
+            ))}
           </div>
-          <Link href="/admin" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">← Back</Link>
+          <button
+            onClick={() => {
+              setIsCreating(true)
+              setCreateData({ title: '', description: '', category: 'Weddings', image_url: '' })
+            }}
+            className="mt-4 w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded transition-colors"
+          >
+            + Add Item
+          </button>
         </div>
 
-        {error && <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded text-red-100">{error}</div>}
-
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            {isCreating ? (
-              <div className="bg-slate-800 rounded-lg p-6 mb-6">
-                <h2 className="text-xl font-bold mb-4">New Portfolio Item</h2>
-                <div className="space-y-4">
-                  <input type="text" placeholder="Title" value={createData.title} onChange={(e) => setCreateData({ ...createData, title: e.target.value })} className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white" />
-                  <textarea placeholder="Description" rows={3} value={createData.description} onChange={(e) => setCreateData({ ...createData, description: e.target.value })} className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white" />
-                  <select value={createData.category} onChange={(e) => setCreateData({ ...createData, category: e.target.value })} className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white">
-                    <option>Weddings</option>
-                    <option>Quinceañeras</option>
-                    <option>Events</option>
-                    <option>Portraits</option>
-                  </select>
-                  <div className="border-2 border-dashed border-slate-600 rounded p-4">
-                    {createData.image_url ? (
-                      <div>
-                        <img src={createData.image_url} alt="Preview" className="max-w-full max-h-40 mx-auto mb-2" />
-                        <label className="text-sm text-blue-400 cursor-pointer">Change image</label>
-                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, true)} className="hidden" />
-                      </div>
-                    ) : (
-                      <label className="block text-center text-slate-400 cursor-pointer">
-                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, true)} className="hidden" />
-                        Click to upload image
-                      </label>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={handleCreateItem} disabled={uploadingImage} className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 rounded disabled:opacity-50">Create</button>
-                    <button onClick={() => setIsCreating(false)} className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">Cancel</button>
-                  </div>
+        {/* Edit/Create Form */}
+        <div>
+          {isEditing && selectedItem ? (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Edit Item</h2>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={editData.title}
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                  placeholder="Title"
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                />
+                <textarea
+                  value={editData.description}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  placeholder="Description"
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                  rows={4}
+                />
+                <select
+                  value={editData.category}
+                  onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                >
+                  <option>Weddings</option>
+                  <option>Quinceañera</option>
+                  <option>Events</option>
+                  <option>Portraits</option>
+                </select>
+                {editData.image_url && (
+                  <img src={editData.image_url} alt="Preview" className="w-full h-48 object-cover rounded" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, false)}
+                  disabled={uploadingImage}
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                />
+                {uploadingImage && <p className="text-blue-400">Uploading...</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleUpdateItem}
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => handleDeleteItem(selectedItem.id)}
+                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 rounded transition-colors"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
-            ) : null}
-
-            <div className="bg-slate-800 rounded-lg overflow-hidden">
-              <div className="p-6 border-b border-slate-700 flex justify-between items-center">
-                <h2 className="text-xl font-bold">Items ({items.length})</h2>
-                <button onClick={() => setIsCreating(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">+ New Item</button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
-                {items.map(item => (
-                  <div key={item.id} onClick={() => setSelectedItem(item)} className={`p-3 rounded cursor-pointer border ${selectedItem?.id === item.id ? 'border-blue-500 bg-slate-700' : 'border-slate-600 hover:bg-slate-700'}`}>
-                    <img src={item.image_url} alt={item.title} className="w-full h-24 object-cover rounded mb-2" />
-                    <p className="text-sm font-semibold truncate">{item.title}</p>
-                    <p className="text-xs text-slate-400">{item.category}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {selectedItem && (
-            <div className="bg-slate-800 rounded-lg p-6">
-              <h2 className="text-xl font-bold mb-4">Item Details</h2>
-              <img src={selectedItem.image_url} alt={selectedItem.title} className="w-full rounded mb-4" />
+            </>
+          ) : isCreating ? (
+            <>
+              <h2 className="text-2xl font-bold mb-4">New Item</h2>
               <div className="space-y-4">
-                <div><p className="text-slate-400 text-sm">Title</p><p className="text-white font-semibold">{selectedItem.title}</p></div>
-                <div><p className="text-slate-400 text-sm">Category</p><p className="text-white">{selectedItem.category}</p></div>
-                <div><p className="text-slate-400 text-sm">Description</p><p className="text-white text-sm">{selectedItem.description}</p></div>
-                <button onClick={() => handleDeleteItem(selectedItem.id)} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded">Delete</button>
+                <input
+                  type="text"
+                  value={createData.title}
+                  onChange={(e) => setCreateData({ ...createData, title: e.target.value })}
+                  placeholder="Title"
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                />
+                <textarea
+                  value={createData.description}
+                  onChange={(e) => setCreateData({ ...createData, description: e.target.value })}
+                  placeholder="Description"
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                  rows={4}
+                />
+                <select
+                  value={createData.category}
+                  onChange={(e) => setCreateData({ ...createData, category: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                >
+                  <option>Weddings</option>
+                  <option>Quinceañera</option>
+                  <option>Events</option>
+                  <option>Portraits</option>
+                </select>
+                {createData.image_url && (
+                  <img src={createData.image_url} alt="Preview" className="w-full h-48 object-cover rounded" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, true)}
+                  disabled={uploadingImage}
+                  className="w-full px-4 py-2 bg-slate-700 rounded border border-slate-600 text-white"
+                />
+                {uploadingImage && <p className="text-blue-400">Uploading...</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCreateItem}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 rounded transition-colors"
+                  >
+                    Create
+                  </button>
+                  <button
+                    onClick={() => setIsCreating(false)}
+                    className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 rounded transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </div>
+            </>
+          ) : (
+            <p className="text-slate-400">Select an item to edit or create a new one</p>
           )}
         </div>
       </div>
