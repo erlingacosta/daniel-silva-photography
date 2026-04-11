@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
@@ -10,8 +10,10 @@ from datetime import datetime
 from database import get_db
 from models import (
     Booking, User, Inquiry, Invoice, ServicePackage,
-    ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Portfolio
+    ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Portfolio,
+    Message, ClientGallery
 )
+from spaces import upload_to_spaces
 from routers.auth import get_current_user
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -997,3 +999,257 @@ async def delete_portfolio_item(
     db.delete(item)
     db.commit()
     return {"message": "Deleted"}
+
+
+# ---------------------------------------------------------------------------
+# Client Management
+# ---------------------------------------------------------------------------
+
+class SendMessageRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    content: Optional[str] = ""
+
+
+class GalleryVisibilityUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    is_visible: Optional[bool] = True
+
+
+@router.get("/clients")
+async def list_clients(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    users = db.query(User).filter(User.is_admin == False).order_by(User.id.desc()).all()
+    result = []
+    for u in users:
+        booking = (
+            db.query(Booking)
+            .filter(Booking.client_id == u.id)
+            .order_by(Booking.created_at.desc())
+            .first()
+        )
+        booking_info = None
+        if booking:
+            pkg = db.query(ServicePackage).filter(ServicePackage.id == booking.package_id).first()
+            booking_info = {
+                "id": booking.id,
+                "status": booking.status or "pending",
+                "event_date": booking.event_date.isoformat() if booking.event_date else None,
+                "event_type": booking.event_type or "",
+                "package_name": pkg.name if pkg else "",
+            }
+        result.append({
+            "id": u.id,
+            "email": u.email or "",
+            "full_name": u.full_name or "",
+            "phone": u.phone or "",
+            "role": u.role or "client",
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+            "booking": booking_info,
+        })
+    return result
+
+
+@router.get("/clients/{client_id}")
+async def get_client_detail(
+    client_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user = db.query(User).filter(User.id == client_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    booking = (
+        db.query(Booking)
+        .filter(Booking.client_id == client_id)
+        .order_by(Booking.created_at.desc())
+        .first()
+    )
+
+    booking_info = None
+    messages_list = []
+    gallery_list = []
+    message_count = 0
+    gallery_count = 0
+
+    if booking:
+        pkg = db.query(ServicePackage).filter(ServicePackage.id == booking.package_id).first()
+        booking_info = {
+            "id": booking.id,
+            "client_id": booking.client_id,
+            "package_id": booking.package_id,
+            "package_name": pkg.name if pkg else "",
+            "event_date": booking.event_date.isoformat() if booking.event_date else None,
+            "event_type": booking.event_type or "",
+            "event_location": booking.event_location or "",
+            "status": booking.status or "pending",
+            "total_price": booking.total_price or 0,
+            "deposit_paid": booking.deposit_paid or False,
+            "notes": booking.notes or "",
+        }
+
+        msgs = db.query(Message).filter(Message.booking_id == booking.id).order_by(Message.created_at.asc()).all()
+        message_count = len(msgs)
+        for m in msgs:
+            sender = db.query(User).filter(User.id == m.sender_id).first()
+            messages_list.append({
+                "id": m.id,
+                "content": m.content or "",
+                "sender_id": m.sender_id,
+                "sender_name": sender.full_name if sender else "Unknown",
+                "is_read": m.is_read or False,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            })
+
+        gallery = db.query(ClientGallery).filter(ClientGallery.booking_id == booking.id).order_by(ClientGallery.created_at.desc()).all()
+        gallery_count = len(gallery)
+        for g in gallery:
+            gallery_list.append({
+                "id": g.id,
+                "image_url": g.image_url or "",
+                "caption": g.caption or "",
+                "is_visible": g.is_visible,
+                "created_at": g.created_at.isoformat() if g.created_at else None,
+            })
+
+    return {
+        "user": {
+            "id": user.id,
+            "email": user.email or "",
+            "full_name": user.full_name or "",
+            "phone": user.phone or "",
+            "bio": user.bio or "",
+            "profile_image": user.profile_image or "",
+        },
+        "booking": booking_info,
+        "message_count": message_count,
+        "gallery_count": gallery_count,
+        "messages": messages_list,
+        "gallery": gallery_list,
+    }
+
+
+@router.post("/clients/{client_id}/messages")
+async def admin_send_message(
+    client_id: int,
+    data: SendMessageRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    booking = (
+        db.query(Booking)
+        .filter(Booking.client_id == client_id)
+        .order_by(Booking.created_at.desc())
+        .first()
+    )
+    if not booking:
+        raise HTTPException(status_code=404, detail="No booking found for this client")
+
+    msg = Message(
+        booking_id=booking.id,
+        sender_id=current_user.id,
+        content=data.content,
+        is_read=False,
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+    return {
+        "id": msg.id,
+        "content": msg.content,
+        "sender_id": msg.sender_id,
+        "sender_name": current_user.full_name or current_user.email or "Admin",
+        "is_read": msg.is_read,
+        "created_at": msg.created_at.isoformat() if msg.created_at else None,
+    }
+
+
+@router.post("/gallery/upload")
+async def upload_gallery_photo(
+    file: UploadFile = File(...),
+    user_id: int = Form(...),
+    booking_id: int = Form(...),
+    caption: Optional[str] = Form(None),
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    image_url = await upload_to_spaces(file, folder="gallery")
+
+    gallery_item = ClientGallery(
+        booking_id=booking_id,
+        user_id=user_id,
+        image_url=image_url,
+        caption=caption or "",
+        is_visible=True,
+    )
+    db.add(gallery_item)
+    db.commit()
+    db.refresh(gallery_item)
+    return {
+        "id": gallery_item.id,
+        "image_url": gallery_item.image_url,
+        "caption": gallery_item.caption,
+    }
+
+
+@router.patch("/gallery/{gallery_id}")
+async def update_gallery_visibility(
+    gallery_id: int,
+    data: GalleryVisibilityUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    item = db.query(ClientGallery).filter(ClientGallery.id == gallery_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Gallery item not found")
+
+    item.is_visible = data.is_visible
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": item.id,
+        "image_url": item.image_url,
+        "caption": item.caption,
+        "is_visible": item.is_visible,
+    }
+
+
+@router.delete("/gallery/{gallery_id}")
+async def delete_gallery_item(
+    gallery_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    item = db.query(ClientGallery).filter(ClientGallery.id == gallery_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Gallery item not found")
+
+    db.delete(item)
+    db.commit()
+    return {"message": "Gallery item deleted"}

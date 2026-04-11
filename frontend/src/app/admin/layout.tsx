@@ -10,6 +10,7 @@ const navItems = [
   { href: '/admin/about', label: 'About', icon: '◉' },
   { href: '/admin/bookings', label: 'Bookings', icon: '◷' },
   { href: '/admin/inquiries', label: 'Inquiries', icon: '◈' },
+  { href: '/admin/clients', label: 'Clients', icon: '◉' },
   { href: '/admin/settings', label: 'Settings', icon: '◎' },
 ]
 
