@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from pathlib import Path
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -19,19 +19,18 @@ load_dotenv()
 
 # Pydantic Schemas
 class NewsletterSubscribe(BaseModel):
-    email: EmailStr
+    model_config = ConfigDict(extra='ignore')
+    email: Optional[str] = None
 
 class InquiryCreate(BaseModel):
-    email: EmailStr
-    full_name: str
+    model_config = ConfigDict(extra='ignore')
+    email: Optional[str] = None
+    full_name: Optional[str] = ""
     phone: Optional[str] = None
     service_type: Optional[str] = "wedding"
     event_date: Optional[str] = None
     message: Optional[str] = ""
     package_id: Optional[int] = None
-
-    class Config:
-        extra = "ignore"
 
 class ContactCreate(BaseModel):
     name: str

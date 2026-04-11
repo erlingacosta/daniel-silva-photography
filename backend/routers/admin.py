@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
 from pathlib import Path
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 import secrets
 from passlib.context import CryptContext
 from datetime import datetime
@@ -26,19 +26,37 @@ DEFAULT_ABOUT = {
     "client_satisfaction": 100,
 }
 
-# Pydantic Schemas
+# Pydantic Schemas — all fields Optional with defaults, extra='ignore' everywhere
 class CreateFaqRequest(BaseModel):
-    question: str
-    answer: str
-    is_active: bool = True
+    model_config = ConfigDict(extra='ignore')
+    question: Optional[str] = ""
+    answer: Optional[str] = ""
+    is_active: Optional[bool] = True
+    order: Optional[int] = 0
+
+class UpdateFaqRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    is_active: Optional[bool] = None
+    order: Optional[int] = None
 
 class CreateServiceRequest(BaseModel):
-    name: str
-    description: str = ""
-    price: float
-    is_active: bool = True
+    model_config = ConfigDict(extra='ignore')
+    name: Optional[str] = ""
+    description: Optional[str] = ""
+    price: Optional[float] = 0.0
+    is_active: Optional[bool] = True
+
+class UpdateServiceRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    is_active: Optional[bool] = None
 
 class UpdateAboutRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     photographer_name: Optional[str] = None
     bio: Optional[str] = None
     photo_url: Optional[str] = None
@@ -46,17 +64,16 @@ class UpdateAboutRequest(BaseModel):
     years_experience: Optional[int] = None
     client_satisfaction: Optional[int] = None
 
-    class Config:
-        extra = "ignore"  # ignore unknown fields like id, created_at
-
 class PackageCreate(BaseModel):
-    name: str
-    description: str
-    price: float
-    deliverables: str
-    is_active: bool = True
+    model_config = ConfigDict(extra='ignore')
+    name: Optional[str] = ""
+    description: Optional[str] = ""
+    price: Optional[float] = 0.0
+    deliverables: Optional[str] = ""
+    is_active: Optional[bool] = True
 
 class PackageUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
@@ -64,68 +81,65 @@ class PackageUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class PackageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra='ignore')
     id: int
-    name: str
+    name: Optional[str] = None
     description: Optional[str] = None
-    price: float
+    price: Optional[float] = 0.0
     deliverables: Optional[str] = None
-    is_active: bool = True
+    is_active: Optional[bool] = True
     created_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
 
 class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
-    full_name: str
-    role: str = "client"
+    model_config = ConfigDict(extra='ignore')
+    email: Optional[EmailStr] = None
+    password: Optional[str] = ""
+    full_name: Optional[str] = ""
+    role: Optional[str] = "client"
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     role: Optional[str] = None
     is_active: Optional[bool] = None
 
 class UserPasswordReset(BaseModel):
-    password: str
+    model_config = ConfigDict(extra='ignore')
+    password: Optional[str] = ""
 
 class UserAdminResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra='ignore')
     id: int
-    email: str
+    email: Optional[str] = None
     username: Optional[str] = None
     full_name: Optional[str] = None
-    role: str = "client"
-    is_active: bool = True
-    is_admin: bool = False
+    role: Optional[str] = "client"
+    is_active: Optional[bool] = True
+    is_admin: Optional[bool] = False
     created_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
 
 class PortfolioItemCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     title: Optional[str] = ""
     description: Optional[str] = ""
     category: Optional[str] = "Weddings"
     image_url: Optional[str] = ""
 
-    class Config:
-        extra = "ignore"
-
 class PortfolioItemUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     title: Optional[str] = None
     description: Optional[str] = None
     category: Optional[str] = None
     image_url: Optional[str] = None
 
-    class Config:
-        extra = "ignore"
-
 class BookingStatusUpdate(BaseModel):
-    status: str
+    model_config = ConfigDict(extra='ignore')
+    status: Optional[str] = "pending"
 
 class InquiryStatusUpdate(BaseModel):
-    status: str
+    model_config = ConfigDict(extra='ignore')
+    status: Optional[str] = "new"
 
 
 router = APIRouter()
@@ -745,14 +759,12 @@ async def create_faq_item(
     db.add(faq)
     db.commit()
     db.refresh(faq)
-    return {"id": faq.id, "question": faq.question}
+    return {"id": faq.id, "question": faq.question, "answer": faq.answer, "is_active": faq.is_active, "order": getattr(faq, 'order', 0)}
 
 @router.put("/faq/{faq_id}")
 async def update_faq_item(
     faq_id: int,
-    question: Optional[str] = None,
-    answer: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    data: UpdateFaqRequest,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
@@ -764,16 +776,18 @@ async def update_faq_item(
     if not faq:
         raise HTTPException(status_code=404, detail="FAQ not found")
     
-    if question:
-        faq.question = question
-    if answer:
-        faq.answer = answer
-    if is_active is not None:
-        faq.is_active = is_active
+    if data.question is not None:
+        faq.question = data.question
+    if data.answer is not None:
+        faq.answer = data.answer
+    if data.is_active is not None:
+        faq.is_active = data.is_active
+    if data.order is not None and hasattr(faq, 'order'):
+        faq.order = data.order
     
     db.commit()
     db.refresh(faq)
-    return {"id": faq.id, "question": faq.question}
+    return {"id": faq.id, "question": faq.question, "answer": faq.answer, "is_active": faq.is_active, "order": getattr(faq, 'order', 0)}
 
 @router.delete("/faq/{faq_id}")
 async def delete_faq_item(
@@ -822,15 +836,12 @@ async def create_service(
     db.add(service)
     db.commit()
     db.refresh(service)
-    return {"id": service.id, "name": service.name, "price": service.price}
+    return {"id": service.id, "name": service.name, "description": service.description, "price": service.price, "is_active": service.is_active}
 
 @router.put("/services/{service_id}")
 async def update_service(
     service_id: int,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    price: Optional[float] = None,
-    is_active: Optional[bool] = None,
+    data: UpdateServiceRequest,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
@@ -842,18 +853,18 @@ async def update_service(
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
     
-    if name:
-        service.name = name
-    if description:
-        service.description = description
-    if price is not None:
-        service.price = price
-    if is_active is not None:
-        service.is_active = is_active
+    if data.name is not None:
+        service.name = data.name
+    if data.description is not None:
+        service.description = data.description
+    if data.price is not None:
+        service.price = data.price
+    if data.is_active is not None:
+        service.is_active = data.is_active
     
     db.commit()
     db.refresh(service)
-    return {"id": service.id, "name": service.name}
+    return {"id": service.id, "name": service.name, "description": service.description, "price": service.price, "is_active": service.is_active}
 
 @router.delete("/services/{service_id}")
 async def delete_service(

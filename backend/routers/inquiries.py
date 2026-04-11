@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel, ConfigDict
 
 from database import get_db
 from models import Inquiry, User
@@ -16,18 +17,12 @@ async def create_inquiry(
     db: Session = Depends(get_db)
 ):
     """Create inquiry (public endpoint)"""
-    
-    # Parse event_date string to store as string (model column is String)
-    event_date = None
-    if inquiry.event_date:
-        event_date = inquiry.event_date  # already a string, store as-is
-
     new_inquiry = Inquiry(
         email=inquiry.email,
-        name=inquiry.full_name,        # model uses 'name' column
+        full_name=inquiry.full_name,
         phone=inquiry.phone,
-        event_type=inquiry.service_type,  # model uses 'event_type' column
-        event_date=event_date,
+        service_type=inquiry.service_type,
+        event_date=inquiry.event_date,
         message=inquiry.message,
         status="new"
     )
@@ -36,15 +31,14 @@ async def create_inquiry(
     db.commit()
     db.refresh(new_inquiry)
     
-    # Build response manually to handle column name differences
     return InquiryResponse(
         id=new_inquiry.id,
         email=new_inquiry.email,
-        full_name=new_inquiry.name,
-        phone=new_inquiry.phone,
-        service_type=new_inquiry.event_type,
+        full_name=new_inquiry.full_name or "",
+        phone=new_inquiry.phone or "",
+        service_type=new_inquiry.service_type or "",
         event_date=None,
-        message=new_inquiry.message,
+        message=new_inquiry.message or "",
         status=new_inquiry.status,
         created_at=new_inquiry.created_at,
     )
@@ -68,11 +62,11 @@ async def get_inquiries(
         InquiryResponse(
             id=i.id,
             email=i.email,
-            full_name=i.name,
-            phone=i.phone,
-            service_type=i.event_type,
+            full_name=i.full_name or "",
+            phone=i.phone or "",
+            service_type=i.service_type or "",
             event_date=None,
-            message=i.message,
+            message=i.message or "",
             status=i.status,
             created_at=i.created_at,
         )
@@ -101,11 +95,11 @@ async def update_inquiry(
     return InquiryResponse(
         id=inquiry.id,
         email=inquiry.email,
-        full_name=inquiry.name,
-        phone=inquiry.phone,
-        service_type=inquiry.event_type,
+        full_name=inquiry.full_name or "",
+        phone=inquiry.phone or "",
+        service_type=inquiry.service_type or "",
         event_date=None,
-        message=inquiry.message,
+        message=inquiry.message or "",
         status=inquiry.status,
         created_at=inquiry.created_at,
     )

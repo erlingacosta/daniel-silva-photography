@@ -66,3 +66,5 @@ temp/
 *.db
 *.sqlite
 postgres_data/
+!frontend/src/lib/
+!frontend/src/lib/**
