@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from pathlib import Path
-import shutil
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from datetime import datetime
+from typing import Optional
 
 from database import get_db, engine, SessionLocal
 from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn
@@ -16,12 +17,50 @@ from spaces import upload_to_spaces
 
 load_dotenv()
 
-# Pydantic schemas
+# Pydantic Schemas
+class NewsletterSubscribe(BaseModel):
+    email: EmailStr
+
+class InquiryCreate(BaseModel):
+    email: EmailStr
+    full_name: str
+    phone: Optional[str] = None
+    service_type: str = "wedding"
+    event_date: Optional[str] = None
+    message: str
+
 class ContactCreate(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     phone: str
     message: str
+
+class PortfolioCreate(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    category: str = "Weddings"
+    image_url: str
+
+class TestimonialCreate(BaseModel):
+    client_name: str
+    event_type: str
+    quote: str
+    rating: float
+    image_url: str
+
+class PackageCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    deliverables: str
+
+class BookingCreate(BaseModel):
+    client_email: EmailStr
+    package_id: int
+    event_date: Optional[str] = None
+    event_type: str = "wedding"
+    event_location: str
+    notes: Optional[str] = ""
 
 # Create tables on startup
 def init_database():
@@ -122,13 +161,13 @@ def get_portfolios(db: Session = Depends(get_db)):
     ]
 
 @app.post("/portfolios")
-def create_portfolio(title: str, description: str, category: str, image_url: str, db: Session = Depends(get_db)):
+def create_portfolio(data: PortfolioCreate, db: Session = Depends(get_db)):
     portfolio = Portfolio(
-        title=title,
-        description=description,
-        category=category,
-        image_url=image_url,
-        thumbnail_url=image_url,
+        title=data.title,
+        description=data.description,
+        category=data.category,
+        image_url=data.image_url,
+        thumbnail_url=data.image_url,
     )
     db.add(portfolio)
     db.commit()
@@ -136,15 +175,15 @@ def create_portfolio(title: str, description: str, category: str, image_url: str
     return {"id": portfolio.id, "title": portfolio.title, "category": portfolio.category}
 
 @app.put("/portfolios/{portfolio_id}")
-def update_portfolio(portfolio_id: int, data: dict, db: Session = Depends(get_db)):
+def update_portfolio(portfolio_id: int, data: PortfolioCreate, db: Session = Depends(get_db)):
     portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio item not found")
-    for field in ("title", "description", "category", "image_url"):
-        if field in data:
-            setattr(portfolio, field, data[field])
-    if "image_url" in data:
-        portfolio.thumbnail_url = data["image_url"]
+    portfolio.title = data.title
+    portfolio.description = data.description
+    portfolio.category = data.category
+    portfolio.image_url = data.image_url
+    portfolio.thumbnail_url = data.image_url
     db.commit()
     db.refresh(portfolio)
     return {"id": portfolio.id, "title": portfolio.title, "category": portfolio.category}
@@ -175,13 +214,13 @@ def get_testimonials(db: Session = Depends(get_db)):
     ]
 
 @app.post("/testimonials")
-def create_testimonial(client_name: str, event_type: str, quote: str, rating: float, image_url: str, db: Session = Depends(get_db)):
+def create_testimonial(data: TestimonialCreate, db: Session = Depends(get_db)):
     testimonial = Testimonial(
-        client_name=client_name,
-        event_type=event_type,
-        quote=quote,
-        rating=rating,
-        image_url=image_url,
+        client_name=data.client_name,
+        event_type=data.event_type,
+        quote=data.quote,
+        rating=data.rating,
+        image_url=data.image_url,
     )
     db.add(testimonial)
     db.commit()
@@ -204,12 +243,12 @@ def get_packages(db: Session = Depends(get_db)):
     ]
 
 @app.post("/packages")
-def create_package(name: str, description: str, price: float, deliverables: str, db: Session = Depends(get_db)):
+def create_package(data: PackageCreate, db: Session = Depends(get_db)):
     package = ServicePackage(
-        name=name,
-        description=description,
-        price=price,
-        deliverables=deliverables,
+        name=data.name,
+        description=data.description,
+        price=data.price,
+        deliverables=data.deliverables,
     )
     db.add(package)
     db.commit()
@@ -218,27 +257,34 @@ def create_package(name: str, description: str, price: float, deliverables: str,
 
 # Newsletter endpoints
 @app.post("/newsletter/subscribe")
-def subscribe_newsletter(email: str, db: Session = Depends(get_db)):
-    existing = db.query(NewsletterSubscriber).filter(NewsletterSubscriber.email == email).first()
+def subscribe_newsletter(data: NewsletterSubscribe, db: Session = Depends(get_db)):
+    existing = db.query(NewsletterSubscriber).filter(NewsletterSubscriber.email == data.email).first()
     if existing:
-        return {"message": "Already subscribed", "email": email}
+        return {"message": "Already subscribed", "email": data.email}
     
-    subscriber = NewsletterSubscriber(email=email)
+    subscriber = NewsletterSubscriber(email=data.email)
     db.add(subscriber)
     db.commit()
     db.refresh(subscriber)
-    return {"message": "Subscribed successfully", "email": email}
+    return {"message": "Subscribed successfully", "email": data.email}
 
 # Inquiry endpoints
 @app.post("/inquiries")
-def create_inquiry(name: str, email: str, phone: str, event_type: str, event_date: str, message: str, db: Session = Depends(get_db)):
+def create_inquiry(data: InquiryCreate, db: Session = Depends(get_db)):
+    event_date = None
+    if data.event_date:
+        try:
+            event_date = datetime.fromisoformat(data.event_date.replace('Z', '+00:00'))
+        except:
+            pass
+    
     inquiry = Inquiry(
-        name=name,
-        email=email,
-        phone=phone,
-        event_type=event_type,
+        name=data.full_name,
+        email=data.email,
+        phone=data.phone,
+        event_type=data.service_type,
         event_date=event_date,
-        message=message,
+        message=data.message,
     )
     db.add(inquiry)
     db.commit()
@@ -262,25 +308,32 @@ def get_inquiries(db: Session = Depends(get_db)):
 
 # Booking endpoints
 @app.post("/bookings")
-def create_booking(client_email: str, package_id: int, event_date: str, event_type: str, event_location: str, notes: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == client_email).first()
+def create_booking(data: BookingCreate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.client_email).first()
     if not user:
-        user = User(email=client_email, username=client_email.split("@")[0])
+        user = User(email=data.client_email, username=data.client_email.split("@")[0])
         db.add(user)
         db.commit()
         db.refresh(user)
     
-    package = db.query(ServicePackage).filter(ServicePackage.id == package_id).first()
+    package = db.query(ServicePackage).filter(ServicePackage.id == data.package_id).first()
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
     
+    event_date = None
+    if data.event_date:
+        try:
+            event_date = datetime.fromisoformat(data.event_date.replace('Z', '+00:00'))
+        except:
+            pass
+    
     booking = Booking(
         client_id=user.id,
-        package_id=package_id,
+        package_id=data.package_id,
         event_date=event_date,
-        event_type=event_type,
-        event_location=event_location,
-        notes=notes,
+        event_type=data.event_type,
+        event_location=data.event_location,
+        notes=data.notes,
         total_price=package.price,
     )
     db.add(booking)
@@ -309,14 +362,14 @@ def get_bookings(db: Session = Depends(get_db)):
         for b in bookings
     ]
 
-# Contact form endpoint - FIXED to accept JSON body
+# Contact form endpoint
 @app.post("/contact")
-def create_contact(contact_data: ContactCreate, db: Session = Depends(get_db)):
+def create_contact(data: ContactCreate, db: Session = Depends(get_db)):
     contact = ContactMessage(
-        name=contact_data.name,
-        email=contact_data.email,
-        phone=contact_data.phone,
-        message=contact_data.message,
+        name=data.name,
+        email=data.email,
+        phone=data.phone,
+        message=data.message,
         status="new"
     )
     db.add(contact)
@@ -351,7 +404,7 @@ def get_featured_in(db: Session = Depends(get_db)):
         for f in featured
     ]
 
-# Upload endpoint - Spaces
+# Upload endpoint - Spaces (both /upload and /api/upload)
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
@@ -365,7 +418,6 @@ async def upload_file(file: UploadFile = File(...)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-# API endpoint
 @app.post("/api/upload")
 async def api_upload_file(file: UploadFile = File(...)):
     """Alias for /upload endpoint"""
