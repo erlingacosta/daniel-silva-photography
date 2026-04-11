@@ -173,3 +173,26 @@ class FeaturedIn(Base):
     is_active = Column(Boolean, default=True, nullable=True)
     order = Column(Integer, default=0, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(Text)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ClientGallery(Base):
+    __tablename__ = "client_galleries"
+
+    id = Column(Integer, primary_key=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    image_url = Column(String)
+    caption = Column(String)
+    is_visible = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

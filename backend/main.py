@@ -10,8 +10,9 @@ from datetime import datetime
 from typing import Optional
 
 from database import get_db, engine, SessionLocal
-from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn
+from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Message, ClientGallery
 from routers import auth, admin
+from routers import client as client_router
 from db_seed import seed_database as run_seed_database
 from spaces import upload_to_spaces
 
@@ -112,6 +113,9 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # Admin router
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
+
+# Client portal router
+app.include_router(client_router.router, prefix="/client", tags=["client"])
 
 # Root route
 @app.get("/")
