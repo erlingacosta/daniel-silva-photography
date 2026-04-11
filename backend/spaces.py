@@ -15,12 +15,16 @@ def get_spaces_client():
         print(f"   Key: {settings.DO_SPACES_KEY[:10]}...")
         print(f"   Region: {settings.DO_SPACES_REGION}")
         print(f"   Bucket: {settings.DO_SPACES_BUCKET}")
-        print(f"   Endpoint: {settings.DO_SPACES_ENDPOINT}")
+        print(f"   Endpoint: https://{settings.DO_SPACES_REGION}.digitaloceanspaces.com")
+        
+        # IMPORTANT: endpoint_url should NOT include bucket name
+        # boto3 will prepend bucket name automatically
+        endpoint_url = f"https://{settings.DO_SPACES_REGION}.digitaloceanspaces.com"
         
         client = boto3.client(
             's3',
             region_name=settings.DO_SPACES_REGION,
-            endpoint_url=settings.DO_SPACES_ENDPOINT,
+            endpoint_url=endpoint_url,
             aws_access_key_id=settings.DO_SPACES_KEY,
             aws_secret_access_key=settings.DO_SPACES_SECRET,
             config=Config(s3={'addressing_style': 'virtual'})
@@ -54,6 +58,7 @@ async def upload_to_spaces(file: UploadFile, folder: str = 'images') -> str:
         
         client = get_spaces_client()
         bucket = settings.DO_SPACES_BUCKET
+        region = settings.DO_SPACES_REGION
         
         print(f"📁 Using bucket: {bucket}")
         
@@ -73,7 +78,8 @@ async def upload_to_spaces(file: UploadFile, folder: str = 'images') -> str:
             ContentType=file.content_type or 'application/octet-stream'
         )
         
-        url = f"{settings.DO_SPACES_ENDPOINT}/{bucket}/{file_key}"
+        # Construct public URL correctly (bucket.region.digitaloceanspaces.com)
+        url = f"https://{bucket}.{region}.digitaloceanspaces.com/{file_key}"
         print(f"✅ Upload successful: {url}")
         return url
         
