@@ -12,8 +12,10 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    full_name = Column(String)
+    full_name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
+    profile_image = Column(String, nullable=True)
+    bio = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     role = Column(String, default="user")  # user, admin
@@ -83,11 +85,11 @@ class Inquiry(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String)
-    full_name = Column(String)
+    full_name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
-    service_type = Column(String)
+    service_type = Column(String, nullable=True)
     event_date = Column(DateTime, nullable=True)
-    message = Column(Text)
+    message = Column(Text, nullable=True)
     status = Column(String, default="new")  # new, read, contacted, converted, dismissed
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -122,7 +124,7 @@ class ContactMessage(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     email = Column(String, index=True)
-    phone = Column(String)
+    phone = Column(String, nullable=True)
     message = Column(Text)
     status = Column(String, default="new")  # new, read, replied
     created_at = Column(DateTime, default=datetime.utcnow)

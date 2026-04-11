@@ -114,6 +114,9 @@ class UserAdminResponse(BaseModel):
     email: Optional[str] = None
     username: Optional[str] = None
     full_name: Optional[str] = None
+    phone: Optional[str] = None
+    profile_image: Optional[str] = None
+    bio: Optional[str] = None
     role: Optional[str] = "client"
     is_active: Optional[bool] = True
     is_admin: Optional[bool] = False
