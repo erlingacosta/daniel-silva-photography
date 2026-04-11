@@ -104,16 +104,22 @@ class UserAdminResponse(BaseModel):
         from_attributes = True
 
 class PortfolioItemCreate(BaseModel):
-    title: str
+    title: Optional[str] = ""
     description: Optional[str] = ""
-    category: str = "Weddings"
-    image_url: str
+    category: Optional[str] = "Weddings"
+    image_url: Optional[str] = ""
+
+    class Config:
+        extra = "ignore"
 
 class PortfolioItemUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     category: Optional[str] = None
     image_url: Optional[str] = None
+
+    class Config:
+        extra = "ignore"
 
 
 router = APIRouter()
