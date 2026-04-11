@@ -58,7 +58,7 @@ export default function AboutPage() {
       formData.append('file', file)
 
       const token = localStorage.getItem('djs_token')
-      const response = await fetch(`${API_URL}/api/upload`, {
+      const response = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
