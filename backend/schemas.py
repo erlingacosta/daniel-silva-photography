@@ -54,19 +54,20 @@ class BookingUpdate(BaseModel):
 
 class BookingResponse(BaseModel):
     id: int
-    client_id: int
-    service_type: str
-    event_date: datetime
-    event_location: str
-    package: str
-    price: float
-    status: str
-    contract_signed: bool
-    payment_status: str
-    created_at: datetime
-    
+    client_id: Optional[int] = None
+    service_type: Optional[str] = None
+    event_date: Optional[datetime] = None
+    event_location: Optional[str] = None
+    package: Optional[str] = None
+    total_price: float = 0
+    status: str = "pending"
+    contract_signed: bool = False
+    payment_status: str = "unpaid"
+    created_at: Optional[datetime] = None
+
     class Config:
         from_attributes = True
+        extra = "ignore"
 
 # Galleries
 class GalleryImageCreate(BaseModel):

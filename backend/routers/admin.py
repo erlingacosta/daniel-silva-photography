@@ -147,7 +147,7 @@ async def get_admin_dashboard(
         "total_revenue": total_revenue
     }
 
-@router.get("/bookings", response_model=List[BookingResponse])
+@router.get("/bookings")
 async def get_all_bookings(
     status: str = None,
     authorization: str = Header(None),
@@ -156,13 +156,24 @@ async def get_all_bookings(
     current_user = await get_current_user(authorization, db)
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+
     query = db.query(Booking)
     if status:
         query = query.filter(Booking.status == status)
-    
+
     bookings = query.all()
-    return [BookingResponse.model_validate(b) for b in bookings]
+    return [
+        {
+            "id": b.id,
+            "client_email": b.client.email if b.client else "Unknown",
+            "package": b.package.name if b.package else "Unknown",
+            "event_date": b.event_date.isoformat() if b.event_date else None,
+            "status": b.status,
+            "total_price": b.total_price or 0,
+            "created_at": b.created_at.isoformat() if b.created_at else None,
+        }
+        for b in bookings
+    ]
 
 @router.post("/bookings/{booking_id}/send-invoice")
 async def send_invoice(
