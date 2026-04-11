@@ -25,15 +25,22 @@ class InquiryCreate(BaseModel):
     email: EmailStr
     full_name: str
     phone: Optional[str] = None
-    service_type: str = "wedding"
+    service_type: Optional[str] = "wedding"
     event_date: Optional[str] = None
-    message: str
+    message: Optional[str] = ""
+    package_id: Optional[int] = None
+
+    class Config:
+        extra = "ignore"
 
 class ContactCreate(BaseModel):
     name: str
     email: EmailStr
-    phone: str
+    phone: Optional[str] = None
     message: str
+
+    class Config:
+        extra = "ignore"
 
 class PortfolioCreate(BaseModel):
     title: str
@@ -368,7 +375,7 @@ def create_contact(data: ContactCreate, db: Session = Depends(get_db)):
     contact = ContactMessage(
         name=data.name,
         email=data.email,
-        phone=data.phone,
+        phone=data.phone or "",
         message=data.message,
         status="new"
     )
