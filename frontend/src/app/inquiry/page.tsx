@@ -1,47 +1,23 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-interface Package {
-  id: number
-  name: string
-  price: number
-  description: string
-}
+import { publicApi } from '@/lib/api'
 
 export default function InquiryPage() {
   const router = useRouter()
-  const [packages, setPackages] = useState<Package[]>([])
   const [formData, setFormData] = useState({
-    email: '',
     full_name: '',
+    email: '',
     phone: '',
-    service_type: 'wedding',
+    service_type: 'Wedding',
     event_date: '',
     message: '',
-    package_id: '',
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        const response = await fetch(`${API_URL}/packages`)
-        if (response.ok) {
-          const data = await response.json()
-          setPackages(data)
-        }
-      } catch (err) {
-        console.error('Failed to fetch packages:', err)
-      }
-    }
-    fetchPackages()
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,35 +25,23 @@ export default function InquiryPage() {
     setError('')
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${API_URL}/inquiries`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          full_name: formData.full_name,
-          phone: formData.phone,
-          service_type: formData.service_type,
-          event_date: formData.event_date || null,
-          message: formData.message,
-        }),
+      await publicApi.post('/inquiries', {
+        full_name: formData.full_name,
+        email: formData.email,
+        phone: formData.phone,
+        service_type: formData.service_type,
+        event_date: formData.event_date || null,
+        message: formData.message,
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to submit inquiry')
-      }
 
       setSuccess(true)
       setFormData({
-        email: '',
         full_name: '',
+        email: '',
         phone: '',
-        service_type: 'wedding',
+        service_type: 'Wedding',
         event_date: '',
         message: '',
-        package_id: '',
       })
 
       setTimeout(() => {
@@ -176,10 +140,10 @@ export default function InquiryPage() {
                 onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
                 className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
               >
-                <option value="wedding">Wedding</option>
-                <option value="quinceañera">Quinceañera</option>
-                <option value="events">Events</option>
-                <option value="portraits">Portraits</option>
+                <option value="Wedding">Wedding</option>
+                <option value="Quinceañera">Quinceañera</option>
+                <option value="Event">Event</option>
+                <option value="Portrait">Portrait</option>
               </select>
             </div>
 
@@ -194,26 +158,6 @@ export default function InquiryPage() {
                 className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
               />
             </div>
-
-            {packages.length > 0 && (
-              <div>
-                <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>
-                  Interested Package
-                </label>
-                <select
-                  value={formData.package_id}
-                  onChange={(e) => setFormData({ ...formData, package_id: e.target.value })}
-                  className="w-full px-4 py-3 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-600"
-                >
-                  <option value="">Select a package (optional)</option>
-                  {packages.map((pkg) => (
-                    <option key={pkg.id} value={pkg.id}>
-                      {pkg.name} - ${pkg.price.toLocaleString()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             <div>
               <label className="block text-sm uppercase tracking-wider mb-2" style={{ color: '#d4af37' }}>

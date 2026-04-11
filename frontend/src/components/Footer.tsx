@@ -77,7 +77,7 @@ export default function Footer() {
                 { label: 'About', href: '#about' },
                 { label: 'Testimonials', href: '#testimonials' },
                 { label: 'Pricing', href: '#pricing' },
-                { label: 'Book Now', href: '/booking' },
+                { label: 'Book Now', href: '/inquiry' },
               ].map((link) => (
                 <li key={link.label}>
                   <Link

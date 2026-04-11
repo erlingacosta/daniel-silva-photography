@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { publicApi } from '@/lib/api'
 
 export default function ContactPage() {
   const router = useRouter()
@@ -22,18 +23,7 @@ export default function ContactPage() {
     setError('')
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${API_URL}/contact`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to submit contact form')
-      }
+      await publicApi.post('/contact', formData)
 
       setSuccess(true)
       setFormData({ name: '', email: '', phone: '', message: '' })
