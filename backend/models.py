@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Table, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import enum
 
 Base = declarative_base()
 
@@ -14,13 +13,13 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     full_name = Column(String)
+    phone = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     role = Column(String, default="user")  # user, admin
     created_at = Column(DateTime, default=datetime.utcnow)
     
     bookings = relationship("Booking", back_populates="client")
-    inquiries = relationship("Inquiry", back_populates="sender")
 
 class Portfolio(Base):
     __tablename__ = "portfolios"
@@ -56,46 +55,42 @@ class ServicePackage(Base):
     deliverables = Column(Text)  # JSON string of deliverables
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
-    bookings = relationship("Booking", back_populates="package")
 
 class Booking(Base):
     __tablename__ = "bookings"
     
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("users.id"))
-    package_id = Column(Integer, ForeignKey("service_packages.id"))
+    service_type = Column(String)
     event_date = Column(DateTime)
-    event_type = Column(String)  # wedding, quinceañera, event, portrait
     event_location = Column(String)
+    package = Column(String)
+    price = Column(Float)
+    status = Column(String, default="inquiry")  # inquiry, pending, confirmed, completed, cancelled
     notes = Column(Text)
-    status = Column(String, default="pending")  # pending, confirmed, completed, cancelled
-    total_price = Column(Float)
-    deposit_paid = Column(Boolean, default=False)
+    contract_signed = Column(Boolean, default=False)
     payment_intent_id = Column(String, nullable=True)
+    payment_status = Column(String, default="pending")
     deliverables_ready = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     client = relationship("User", back_populates="bookings")
-    package = relationship("ServicePackage", back_populates="bookings")
     invoices = relationship("Invoice", back_populates="booking")
 
 class Inquiry(Base):
     __tablename__ = "inquiries"
     
     id = Column(Integer, primary_key=True, index=True)
-    sender_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     email = Column(String)
-    name = Column(String)
-    phone = Column(String)
-    event_type = Column(String)
-    event_date = Column(String)
+    full_name = Column(String)
+    phone = Column(String, nullable=True)
+    service_type = Column(String)
+    event_date = Column(DateTime, nullable=True)
     message = Column(Text)
-    status = Column(String, default="new")  # new, contacted, converted, dismissed
+    status = Column(String, default="new")  # new, read, contacted, converted, dismissed
     created_at = Column(DateTime, default=datetime.utcnow)
-    
-    sender = relationship("User", back_populates="inquiries")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Invoice(Base):
     __tablename__ = "invoices"
