@@ -15,11 +15,13 @@ interface DashboardStats {
 }
 
 const quickLinks = [
-  { href: '/admin/packages', label: 'Manage Packages', desc: 'Edit pricing packages', color: '#d4af37' },
-  { href: '/admin/services', label: 'A La Carte Services', desc: 'Add extra services and pricing', color: '#c19b2e' },
-  { href: '/admin/faq', label: 'Manage FAQ', desc: 'Edit frequently asked questions', color: '#b08827' },
-  { href: '/admin/contact', label: 'Contact Messages', desc: 'View and reply to inquiries', color: '#9f7720' },
-  { href: '/admin/users', label: 'Manage Users', desc: 'Create users and manage roles', color: '#8e6b1a' },
+  { href: '/admin/bookings', label: 'Bookings', desc: 'View and manage all bookings', color: '#d4af37' },
+  { href: '/admin/inquiries', label: 'Inquiries', desc: 'Review and respond to inquiries', color: '#c19b2e' },
+  { href: '/admin/packages', label: 'Manage Packages', desc: 'Edit pricing packages', color: '#b08827' },
+  { href: '/admin/services', label: 'A La Carte Services', desc: 'Add extra services and pricing', color: '#9f7720' },
+  { href: '/admin/faq', label: 'Manage FAQ', desc: 'Edit frequently asked questions', color: '#8e6b1a' },
+  { href: '/admin/contact', label: 'Contact Messages', desc: 'View and reply to contact messages', color: '#7d5f17' },
+  { href: '/admin/users', label: 'Manage Users', desc: 'Create users and manage roles', color: '#6c5214' },
 ]
 
 export default function AdminDashboard() {
