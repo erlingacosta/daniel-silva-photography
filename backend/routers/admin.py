@@ -39,12 +39,12 @@ class CreateServiceRequest(BaseModel):
     is_active: bool = True
 
 class UpdateAboutRequest(BaseModel):
-    photographer_name: Optional[str] = "Daniel Silva"
-    bio: Optional[str] = ""
-    photo_url: Optional[str] = ""
-    events_photographed: Optional[int] = 500
-    years_experience: Optional[int] = 15
-    client_satisfaction: Optional[int] = 100
+    photographer_name: Optional[str] = None
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    events_photographed: Optional[int] = None
+    years_experience: Optional[int] = None
+    client_satisfaction: Optional[int] = None
 
     class Config:
         extra = "ignore"  # ignore unknown fields like id, created_at
@@ -262,12 +262,12 @@ async def update_about_data(
         raise HTTPException(status_code=403, detail="Admin access required")
     
     about_data = {
-        "photographer_name": data.photographer_name,
-        "bio": data.bio,
-        "photo_url": data.photo_url,
-        "events_photographed": data.events_photographed,
-        "years_experience": data.years_experience,
-        "client_satisfaction": data.client_satisfaction,
+        "photographer_name": data.photographer_name if data.photographer_name is not None else DEFAULT_ABOUT["photographer_name"],
+        "bio": data.bio if data.bio is not None else DEFAULT_ABOUT["bio"],
+        "photo_url": data.photo_url if data.photo_url is not None else DEFAULT_ABOUT["photo_url"],
+        "events_photographed": data.events_photographed if data.events_photographed is not None else DEFAULT_ABOUT["events_photographed"],
+        "years_experience": data.years_experience if data.years_experience is not None else DEFAULT_ABOUT["years_experience"],
+        "client_satisfaction": data.client_satisfaction if data.client_satisfaction is not None else DEFAULT_ABOUT["client_satisfaction"],
     }
     ABOUT_FILE.write_text(json.dumps(about_data, indent=2))
     return about_data
@@ -283,12 +283,12 @@ async def put_about_data(
         raise HTTPException(status_code=403, detail="Admin access required")
     
     about_data = {
-        "photographer_name": data.photographer_name,
-        "bio": data.bio,
-        "photo_url": data.photo_url,
-        "events_photographed": data.events_photographed,
-        "years_experience": data.years_experience,
-        "client_satisfaction": data.client_satisfaction,
+        "photographer_name": data.photographer_name if data.photographer_name is not None else DEFAULT_ABOUT["photographer_name"],
+        "bio": data.bio if data.bio is not None else DEFAULT_ABOUT["bio"],
+        "photo_url": data.photo_url if data.photo_url is not None else DEFAULT_ABOUT["photo_url"],
+        "events_photographed": data.events_photographed if data.events_photographed is not None else DEFAULT_ABOUT["events_photographed"],
+        "years_experience": data.years_experience if data.years_experience is not None else DEFAULT_ABOUT["years_experience"],
+        "client_satisfaction": data.client_satisfaction if data.client_satisfaction is not None else DEFAULT_ABOUT["client_satisfaction"],
     }
     ABOUT_FILE.write_text(json.dumps(about_data, indent=2))
     return about_data
