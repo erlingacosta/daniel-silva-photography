@@ -22,17 +22,17 @@ interface GalleryItem {
 }
 
 interface ClientData {
-  user: {
-    id: number
-    email: string
-    full_name: string
-    phone: string
-    bio: string
-    profile_image: string
+  user?: {
+    id?: number
+    email?: string
+    full_name?: string
+    phone?: string
+    bio?: string
+    profile_image?: string
     created_at?: string
     role?: string
   }
-  booking: {
+  booking?: {
     id: number
     client_id: number
     package_name: string
@@ -47,10 +47,10 @@ interface ClientData {
     contract_notes: string
     internal_notes: string
   } | null
-  messages: Message[]
-  gallery: GalleryItem[]
-  message_count: number
-  gallery_count: number
+  messages?: Message[]
+  gallery?: GalleryItem[]
+  message_count?: number
+  gallery_count?: number
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -106,7 +106,7 @@ export default function AdminClientDetailPage() {
     try {
       const res = await adminApi.get(`/admin/clients/${clientId}`)
       setData(res.data)
-      const u = res.data.user
+      const u = res.data?.user || {}
       setEditClient({ full_name: u.full_name || '', email: u.email || '', phone: u.phone || '', role: u.role || 'client' })
     } catch (e) {
       console.error(e)
@@ -151,7 +151,7 @@ export default function AdminClientDetailPage() {
     setSending(true)
     try {
       const res = await adminApi.post(`/admin/clients/${clientId}/messages`, { content: messageText })
-      setData(prev => prev ? { ...prev, messages: [...prev.messages, res.data] } : prev)
+      setData(prev => prev ? { ...prev, messages: [...(prev.messages || []), res.data] } : prev)
       setMessageText('')
     } catch (e) { console.error(e) }
     finally { setSending(false) }
@@ -162,7 +162,7 @@ export default function AdminClientDetailPage() {
       const res = await adminApi.patch(`/admin/gallery/${photo.id}`, { is_visible: !photo.is_visible })
       setData(prev => prev ? {
         ...prev,
-        gallery: prev.gallery.map(g => g.id === photo.id ? { ...g, is_visible: res.data.is_visible } : g)
+        gallery: (prev.gallery || []).map(g => g.id === photo.id ? { ...g, is_visible: res.data.is_visible } : g)
       } : prev)
     } catch (e) { console.error(e) }
   }
@@ -171,7 +171,7 @@ export default function AdminClientDetailPage() {
     if (!window.confirm('Delete this photo?')) return
     try {
       await adminApi.delete(`/admin/gallery/${id}`)
-      setData(prev => prev ? { ...prev, gallery: prev.gallery.filter(g => g.id !== id) } : prev)
+      setData(prev => prev ? { ...prev, gallery: (prev.gallery || []).filter(g => g.id !== id) } : prev)
     } catch (e) { console.error(e) }
   }
 
@@ -184,14 +184,14 @@ export default function AdminClientDetailPage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('user_id', String(data.user.id))
+      formData.append('user_id', String(data.user?.id))
       formData.append('booking_id', String(data.booking.id))
       if (uploadCaption) formData.append('caption', uploadCaption)
       const res = await adminApi.post('/admin/gallery/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       const newPhoto = { ...res.data, is_visible: true, created_at: new Date().toISOString() }
-      setData(prev => prev ? { ...prev, gallery: [newPhoto, ...prev.gallery] } : prev)
+      setData(prev => prev ? { ...prev, gallery: [newPhoto, ...(prev.gallery || [])] } : prev)
       setUploadCaption('')
       if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (e) {
@@ -205,7 +205,10 @@ export default function AdminClientDetailPage() {
   if (loading) return <div className="p-8 text-gray-500">Loading client...</div>
   if (!data) return <div className="p-8 text-red-500">Client not found</div>
 
-  const { user, booking, messages, gallery } = data
+  const user = data?.user || {}
+  const booking = data?.booking || null
+  const messages = data?.messages || []
+  const gallery = data?.gallery || []
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
