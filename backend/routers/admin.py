@@ -164,6 +164,12 @@ class BookingGeneralUpdate(BaseModel):
     deliverables_ready: Optional[bool] = None
 
 
+class CreateClientMessageRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    booking_id: Optional[int] = None
+    content: Optional[str] = ""
+
+
 class CreateFaqRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     question: Optional[str] = ""
@@ -582,7 +588,7 @@ async def get_client(
 @router.post("/clients/{id}/messages")
 async def create_client_message(
     id: int,
-    data: BookingGeneralUpdate,
+    data: CreateClientMessageRequest,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
