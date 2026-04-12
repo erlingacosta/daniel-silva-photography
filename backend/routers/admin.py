@@ -156,12 +156,20 @@ class ConvertInquiryRequest(BaseModel):
     client_phone: Optional[str] = None
     package_id: Optional[int] = None
     event_date: Optional[str] = None
+    event_type: Optional[str] = None
     event_location: Optional[str] = None
     total_price: Optional[float] = None
-    deposit_amount: Optional[float] = 0.0
-    deposit_due_date: Optional[str] = ""
-    contract_notes: Optional[str] = ""
-    internal_notes: Optional[str] = ""
+    deposit_amount: Optional[float] = None
+    deposit_due_date: Optional[str] = None
+    contract_notes: Optional[str] = None
+    internal_notes: Optional[str] = None
+
+
+class CreateClientMessageRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    booking_id: Optional[int] = None
+    content: Optional[str] = None
+    message: Optional[str] = None
 
 
 class BookingGeneralUpdate(BaseModel):
@@ -506,8 +514,8 @@ async def convert_inquiry_to_booking(
         user = User(
             email=data.client_email,
             username=username,
-            full_name=data.full_name or "",
-            phone=data.phone or "",
+            full_name=data.client_name or "",
+            phone=data.client_phone or "",
             hashed_password=pwd_context.hash(secrets.token_hex(16)),
             is_active=True,
             is_admin=False,
@@ -591,7 +599,7 @@ async def get_client(
 @router.post("/clients/{id}/messages")
 async def create_client_message(
     id: int,
-    data: BookingGeneralUpdate,
+    data: CreateClientMessageRequest,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
@@ -603,10 +611,11 @@ async def create_client_message(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
+    message_content = data.content or data.message or ""
     message = Message(
         booking_id=data.booking_id,
         sender_id=current_user.id,
-        content=data.content
+        content=message_content
     )
     db.add(message)
     db.commit()
