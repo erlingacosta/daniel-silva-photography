@@ -203,3 +203,16 @@ class ClientGallery(Base):
     caption = Column(String)
     is_visible = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AboutSettings(Base):
+    __tablename__ = "about_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    photographer_name = Column(String, default="Daniel Silva")
+    bio = Column(Text, nullable=True)
+    photo_url = Column(String, nullable=True)
+    events_photographed = Column(Integer, default=500)
+    years_experience = Column(Integer, default=15)
+    client_satisfaction = Column(Integer, default=100)
+    updated_at = Column(DateTime, default=datetime.utcnow)

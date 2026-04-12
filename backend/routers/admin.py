@@ -20,6 +20,15 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ABOUT_FILE = Path(__file__).parent.parent / "about_data.json"
 
+
+def parse_date(date_str):
+    if not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str.split("T")[0].split(" ")[0], "%Y-%m-%d").date()
+    except:
+        return None
+
 DEFAULT_ABOUT = {
     "photographer_name": "Daniel Silva",
     "bio": "Daniel Silva is a passionate photographer dedicated to capturing life's most important moments.",
@@ -300,7 +309,7 @@ async def create_booking(
     booking = Booking(
         client_id=user.id,
         package_id=data.package_id,
-        event_date=datetime.fromisoformat(data.event_date),
+        event_date=parse_date(data.event_date),
         event_type=data.event_type or "",
         event_location=data.event_location or "",
         total_price=data.total_price or 0.0,
@@ -510,7 +519,7 @@ async def convert_inquiry_to_booking(
     booking = Booking(
         client_id=user.id,
         package_id=data.package_id,
-        event_date=datetime.fromisoformat(data.event_date),
+        event_date=parse_date(data.event_date),
         event_type=data.event_type or "",
         event_location=data.event_location or "",
         total_price=data.total_price or 0.0,
@@ -748,3 +757,101 @@ async def admin_reset_client_password(
         "temp_password": temp_pw,
         "message": f"Temporary password set for {user.email}. Client will be prompted to change it on next login.",
     }
+
+
+# --- Packages Admin ---
+@router.get("/packages")
+async def admin_get_packages(authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    packages = db.query(ServicePackage).order_by(ServicePackage.id).all()
+    return [{"id": p.id, "name": p.name, "description": p.description, "price": p.price,
+             "deliverables": p.deliverables, "is_active": p.is_active,
+             "created_at": p.created_at.isoformat() if p.created_at else None} for p in packages]
+
+@router.post("/packages")
+async def admin_create_package(data: PackageCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    pkg = ServicePackage(name=data.name, description=data.description, price=data.price,
+                         deliverables=data.deliverables, is_active=data.is_active)
+    db.add(pkg)
+    db.commit()
+    db.refresh(pkg)
+    return {"id": pkg.id, "name": pkg.name, "description": pkg.description, "price": pkg.price,
+            "deliverables": pkg.deliverables, "is_active": pkg.is_active,
+            "created_at": pkg.created_at.isoformat() if pkg.created_at else None}
+
+@router.put("/packages/{pkg_id}")
+async def admin_update_package(pkg_id: int, data: PackageUpdate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    pkg = db.query(ServicePackage).filter(ServicePackage.id == pkg_id).first()
+    if not pkg:
+        raise HTTPException(status_code=404, detail="Package not found")
+    if data.name is not None: pkg.name = data.name
+    if data.description is not None: pkg.description = data.description
+    if data.price is not None: pkg.price = data.price
+    if data.deliverables is not None: pkg.deliverables = data.deliverables
+    if data.is_active is not None: pkg.is_active = data.is_active
+    db.commit()
+    db.refresh(pkg)
+    return {"id": pkg.id, "name": pkg.name, "description": pkg.description, "price": pkg.price,
+            "deliverables": pkg.deliverables, "is_active": pkg.is_active,
+            "created_at": pkg.created_at.isoformat() if pkg.created_at else None}
+
+@router.delete("/packages/{pkg_id}")
+async def admin_delete_package(pkg_id: int, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    pkg = db.query(ServicePackage).filter(ServicePackage.id == pkg_id).first()
+    if not pkg:
+        raise HTTPException(status_code=404, detail="Package not found")
+    db.delete(pkg)
+    db.commit()
+    return {"message": "Package deleted"}
+
+
+# --- About Admin ---
+@router.get("/about")
+async def admin_get_about(authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from models import AboutSettings
+    about = db.query(AboutSettings).first()
+    if not about:
+        about = AboutSettings()
+        db.add(about)
+        db.commit()
+        db.refresh(about)
+    return {"id": about.id, "photographer_name": about.photographer_name, "bio": about.bio,
+            "photo_url": about.photo_url, "events_photographed": about.events_photographed,
+            "years_experience": about.years_experience, "client_satisfaction": about.client_satisfaction}
+
+@router.post("/about")
+async def admin_update_about(data: dict, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from models import AboutSettings
+    about = db.query(AboutSettings).first()
+    if not about:
+        about = AboutSettings()
+        db.add(about)
+    if "photographer_name" in data: about.photographer_name = data["photographer_name"]
+    if "bio" in data: about.bio = data["bio"]
+    if "photo_url" in data: about.photo_url = data["photo_url"]
+    if "events_photographed" in data: about.events_photographed = data["events_photographed"]
+    if "years_experience" in data: about.years_experience = data["years_experience"]
+    if "client_satisfaction" in data: about.client_satisfaction = data["client_satisfaction"]
+    about.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(about)
+    return {"id": about.id, "photographer_name": about.photographer_name, "bio": about.bio,
+            "photo_url": about.photo_url, "events_photographed": about.events_photographed,
+            "years_experience": about.years_experience, "client_satisfaction": about.client_satisfaction}

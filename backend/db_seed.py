@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import User, ServicePackage, Portfolio, FaqItem, AlaCarteService
+from models import User, ServicePackage, Portfolio, FaqItem, AlaCarteService, AboutSettings
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -127,9 +127,28 @@ def seed_ala_carte(db: Session):
         print(f"⚠️ Error seeding a la carte: {e}")
         db.rollback()
 
+def seed_about(db: Session):
+    try:
+        if db.query(AboutSettings).count() > 0:
+            return
+        about = AboutSettings(
+            photographer_name="Daniel Silva",
+            bio="Daniel Silva is a passionate photographer dedicated to capturing life's most important moments. With over 15 years of experience, he specializes in wedding, quinceañera, and event photography.",
+            events_photographed=500,
+            years_experience=15,
+            client_satisfaction=100,
+        )
+        db.add(about)
+        db.commit()
+        print("✅ About settings seeded")
+    except Exception as e:
+        print(f"⚠️ Error seeding about settings: {e}")
+        db.rollback()
+
 def seed_database(db: Session):
     seed_admin_user(db)
     seed_packages(db)
     seed_portfolios(db)
     seed_faq(db)
     seed_ala_carte(db)
+    seed_about(db)
