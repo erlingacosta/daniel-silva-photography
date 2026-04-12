@@ -86,6 +86,10 @@ export default function AdminClientDetailPage() {
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Booking management
+  const [bookingEdit, setBookingEdit] = useState({ status: '', notes: '', deposit_paid: false, deposit_amount: 0, internal_notes: '' })
+  const [savingBooking, setSavingBooking] = useState(false)
+
   // Gallery upload
   const [uploadCaption, setUploadCaption] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -100,14 +104,42 @@ export default function AdminClientDetailPage() {
   }
 
   useEffect(() => { fetchData() }, [clientId])
+  useEffect(() => {
+    if (data?.booking) {
+      setBookingEdit({
+        status: data.booking.status || '',
+        notes: data.booking.notes || '',
+        deposit_paid: data.booking.deposit_paid || false,
+        deposit_amount: data.booking.deposit_amount || 0,
+        internal_notes: data.booking.internal_notes || '',
+      })
+    }
+  }, [data?.booking])
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [data?.messages])
 
   async function fetchData() {
     try {
       const res = await adminApi.get(`/admin/clients/${clientId}`)
-      setData(res.data)
-      const u = res.data.user
-      setEditClient({ full_name: u.full_name || '', email: u.email || '', phone: u.phone || '', role: u.role || 'client' })
+      const flat = res.data
+      const user = {
+        id: flat.id,
+        email: flat.email || '',
+        full_name: flat.full_name || '',
+        phone: flat.phone || '',
+        role: flat.role || 'client',
+        created_at: flat.created_at || '',
+        bio: '',
+        profile_image: '',
+      }
+      setData({
+        user,
+        booking: flat.booking || null,
+        messages: flat.messages || [],
+        gallery: flat.gallery || [],
+        message_count: 0,
+        gallery_count: 0,
+      })
+      setEditClient({ full_name: user.full_name, email: user.email, phone: user.phone, role: user.role })
     } catch (e) {
       console.error(e)
     } finally {
@@ -143,6 +175,21 @@ export default function AdminClientDetailPage() {
       showToast('Error generating password')
     } finally {
       setResettingPw(false)
+    }
+  }
+
+  async function saveBooking() {
+    if (!data?.booking) return
+    setSavingBooking(true)
+    try {
+      await adminApi.put(`/admin/bookings/${data.booking.id}`, bookingEdit)
+      setData(prev => prev && prev.booking ? { ...prev, booking: { ...prev.booking, ...bookingEdit } } : prev)
+      showToast('Booking updated')
+    } catch (e) {
+      console.error(e)
+      showToast('Error saving booking')
+    } finally {
+      setSavingBooking(false)
     }
   }
 
@@ -334,6 +381,47 @@ export default function AdminClientDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Section B2 — Manage Booking */}
+      {booking && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Manage Booking</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Status</label>
+              <select value={bookingEdit.status} onChange={e => setBookingEdit(b => ({ ...b, status: e.target.value }))} className={inputCls}>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="deposit_paid">Deposit Paid</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Deposit Amount ($)</label>
+              <input type="number" value={bookingEdit.deposit_amount} onChange={e => setBookingEdit(b => ({ ...b, deposit_amount: parseFloat(e.target.value) || 0 }))} className={inputCls} />
+            </div>
+            <div className="flex items-center gap-2 pt-4">
+              <input type="checkbox" id="deposit_paid" checked={bookingEdit.deposit_paid} onChange={e => setBookingEdit(b => ({ ...b, deposit_paid: e.target.checked }))} className="w-4 h-4" />
+              <label htmlFor="deposit_paid" className="text-sm font-medium text-gray-700">Deposit Paid</label>
+            </div>
+            <div className="col-span-2">
+              <label className={labelCls}>Notes</label>
+              <textarea rows={2} value={bookingEdit.notes} onChange={e => setBookingEdit(b => ({ ...b, notes: e.target.value }))} className={inputCls + ' resize-none'} />
+            </div>
+            <div className="col-span-2">
+              <label className={labelCls}>Internal Notes</label>
+              <textarea rows={2} value={bookingEdit.internal_notes} onChange={e => setBookingEdit(b => ({ ...b, internal_notes: e.target.value }))} className={inputCls + ' resize-none'} />
+            </div>
+            <div className="col-span-2 flex justify-end">
+              <button onClick={saveBooking} disabled={savingBooking} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50">
+                {savingBooking ? 'Saving...' : 'Save Booking'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section C — Messages */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">

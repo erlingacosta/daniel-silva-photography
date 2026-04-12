@@ -49,6 +49,7 @@ class Testimonial(Base):
     rating = Column(Float, nullable=True)
     image_url = Column(String, nullable=True)
     order = Column(Integer, default=0, nullable=True)
+    is_approved = Column(Boolean, default=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
 
 

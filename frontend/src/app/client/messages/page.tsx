@@ -55,9 +55,9 @@ export default function MessagesPage() {
     if (!newMessage.trim()) return
     setSending(true)
     try {
-      const res = await clientApi.post('/client/messages', { content: newMessage.trim() })
-      setMessages((prev) => [...prev, res.data])
+      await clientApi.post('/client/messages', { content: newMessage.trim() })
       setNewMessage('')
+      await fetchMessages()
     } catch {
       setError('Failed to send message.')
     } finally {

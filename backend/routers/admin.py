@@ -11,7 +11,7 @@ from database import get_db
 from models import (
     Booking, User, Inquiry, Invoice, ServicePackage,
     ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Portfolio,
-    Message, ClientGallery
+    Message, ClientGallery, Testimonial
 )
 from spaces import upload_to_spaces
 from routers.auth import get_current_user
@@ -747,4 +747,436 @@ async def admin_reset_client_password(
     return {
         "temp_password": temp_pw,
         "message": f"Temporary password set for {user.email}. Client will be prompted to change it on next login.",
+    }
+
+# ---------------------------------------------------------------------------
+# Contact Messages
+# ---------------------------------------------------------------------------
+
+@router.get("/contact")
+async def admin_list_contact_messages(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    msgs = db.query(ContactMessage).order_by(ContactMessage.created_at.desc()).all()
+    return [
+        {
+            "id": m.id,
+            "name": m.name,
+            "email": m.email,
+            "phone": m.phone,
+            "message": m.message,
+            "status": m.status,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in msgs
+    ]
+
+
+@router.patch("/contact/{msg_id}/status")
+async def admin_update_contact_status(
+    msg_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    msg = db.query(ContactMessage).filter(ContactMessage.id == msg_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.status = "unread" if msg.status == "read" else "read"
+    db.commit()
+    db.refresh(msg)
+    return {"id": msg.id, "status": msg.status}
+
+
+@router.delete("/contact/{msg_id}")
+async def admin_delete_contact_message(
+    msg_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    msg = db.query(ContactMessage).filter(ContactMessage.id == msg_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    db.delete(msg)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# ---------------------------------------------------------------------------
+# About
+# ---------------------------------------------------------------------------
+
+@router.get("/about")
+async def admin_get_about(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if ABOUT_FILE.exists():
+        with open(ABOUT_FILE, "r") as f:
+            data = json.load(f)
+    else:
+        data = DEFAULT_ABOUT.copy()
+    return data
+
+
+@router.post("/about")
+async def admin_update_about(
+    body: UpdateAboutRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if ABOUT_FILE.exists():
+        with open(ABOUT_FILE, "r") as f:
+            data = json.load(f)
+    else:
+        data = DEFAULT_ABOUT.copy()
+    update = body.model_dump(exclude_none=True)
+    data.update(update)
+    with open(ABOUT_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+    return data
+
+
+# ---------------------------------------------------------------------------
+# Featured In
+# ---------------------------------------------------------------------------
+
+class FeaturedInCreate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: Optional[str] = ""
+    logo_url: Optional[str] = ""
+    url: Optional[str] = ""
+    is_active: Optional[bool] = True
+    order: Optional[int] = 0
+
+
+@router.get("/featured-in")
+async def admin_list_featured_in(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    items = db.query(FeaturedIn).order_by(FeaturedIn.order).all()
+    return [
+        {
+            "id": i.id, "name": i.name, "logo_url": i.logo_url,
+            "url": i.url, "is_active": i.is_active, "order": i.order,
+            "created_at": i.created_at.isoformat() if i.created_at else None,
+        }
+        for i in items
+    ]
+
+
+@router.post("/featured-in")
+async def admin_create_featured_in(
+    body: FeaturedInCreate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = FeaturedIn(**body.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "name": item.name, "logo_url": item.logo_url, "url": item.url, "is_active": item.is_active, "order": item.order}
+
+
+@router.put("/featured-in/{item_id}")
+async def admin_update_featured_in(
+    item_id: int,
+    body: FeaturedInCreate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = db.query(FeaturedIn).filter(FeaturedIn.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+    for k, v in body.model_dump(exclude_none=True).items():
+        setattr(item, k, v)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "name": item.name, "logo_url": item.logo_url, "url": item.url, "is_active": item.is_active, "order": item.order}
+
+
+@router.delete("/featured-in/{item_id}")
+async def admin_delete_featured_in(
+    item_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = db.query(FeaturedIn).filter(FeaturedIn.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+    db.delete(item)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# ---------------------------------------------------------------------------
+# Testimonials
+# ---------------------------------------------------------------------------
+
+class TestimonialCreate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    client_name: Optional[str] = ""
+    event_type: Optional[str] = ""
+    quote: Optional[str] = ""
+    rating: Optional[float] = 5.0
+    image_url: Optional[str] = ""
+    order: Optional[int] = 0
+    is_approved: Optional[bool] = True
+
+
+@router.get("/testimonials")
+async def admin_list_testimonials(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    items = db.query(Testimonial).order_by(Testimonial.order).all()
+    return [
+        {
+            "id": t.id, "client_name": t.client_name, "event_type": t.event_type,
+            "quote": t.quote, "rating": t.rating, "image_url": t.image_url,
+            "order": t.order, "is_approved": t.is_approved,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+        }
+        for t in items
+    ]
+
+
+@router.post("/testimonials")
+async def admin_create_testimonial(
+    body: TestimonialCreate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    t = Testimonial(**body.model_dump())
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+    return {"id": t.id, "client_name": t.client_name, "event_type": t.event_type, "quote": t.quote, "rating": t.rating, "image_url": t.image_url, "order": t.order, "is_approved": t.is_approved}
+
+
+@router.put("/testimonials/{t_id}")
+async def admin_update_testimonial(
+    t_id: int,
+    body: TestimonialCreate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    t = db.query(Testimonial).filter(Testimonial.id == t_id).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Not found")
+    for k, v in body.model_dump(exclude_none=True).items():
+        setattr(t, k, v)
+    db.commit()
+    db.refresh(t)
+    return {"id": t.id, "client_name": t.client_name, "event_type": t.event_type, "quote": t.quote, "rating": t.rating, "image_url": t.image_url, "order": t.order, "is_approved": t.is_approved}
+
+
+@router.patch("/testimonials/{t_id}/approve")
+async def admin_toggle_testimonial_approval(
+    t_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    t = db.query(Testimonial).filter(Testimonial.id == t_id).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Not found")
+    t.is_approved = not t.is_approved
+    db.commit()
+    db.refresh(t)
+    return {"id": t.id, "is_approved": t.is_approved}
+
+
+@router.delete("/testimonials/{t_id}")
+async def admin_delete_testimonial(
+    t_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    t = db.query(Testimonial).filter(Testimonial.id == t_id).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Not found")
+    db.delete(t)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# ---------------------------------------------------------------------------
+# Users management
+# ---------------------------------------------------------------------------
+
+class UserCreate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    email: str
+    full_name: Optional[str] = ""
+    password: str
+    role: Optional[str] = "client"
+
+
+class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+@router.get("/users")
+async def admin_list_users(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [
+        {
+            "id": u.id, "email": u.email, "username": u.username,
+            "full_name": u.full_name, "role": u.role, "is_active": u.is_active,
+            "is_admin": u.is_admin,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+        }
+        for u in users
+    ]
+
+
+@router.post("/users")
+async def admin_create_user(
+    body: UserCreate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    existing = db.query(User).filter(User.email == body.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already in use")
+    u = User(
+        email=body.email,
+        full_name=body.full_name,
+        hashed_password=pwd_context.hash(body.password),
+        role=body.role,
+        is_admin=(body.role == "admin"),
+        is_active=True,
+    )
+    db.add(u)
+    db.commit()
+    db.refresh(u)
+    return {
+        "id": u.id, "email": u.email, "full_name": u.full_name,
+        "role": u.role, "is_active": u.is_active, "is_admin": u.is_admin,
+        "created_at": u.created_at.isoformat() if u.created_at else None,
+    }
+
+
+@router.put("/users/{user_id}")
+async def admin_update_user(
+    user_id: int,
+    body: UserUpdate,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    u = db.query(User).filter(User.id == user_id).first()
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    if body.email is not None: u.email = body.email
+    if body.full_name is not None: u.full_name = body.full_name
+    if body.role is not None:
+        u.role = body.role
+        u.is_admin = (body.role == "admin")
+    if body.is_active is not None: u.is_active = body.is_active
+    db.commit()
+    db.refresh(u)
+    return {
+        "id": u.id, "email": u.email, "username": u.username,
+        "full_name": u.full_name, "role": u.role, "is_active": u.is_active,
+        "is_admin": u.is_admin,
+        "created_at": u.created_at.isoformat() if u.created_at else None,
+    }
+
+
+@router.delete("/users/{user_id}")
+async def admin_deactivate_user(
+    user_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    u = db.query(User).filter(User.id == user_id).first()
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    u.is_active = False
+    db.commit()
+    return {"message": "User deactivated"}
+
+
+@router.patch("/users/{user_id}/activate")
+async def admin_activate_user(
+    user_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    u = db.query(User).filter(User.id == user_id).first()
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    u.is_active = True
+    db.commit()
+    db.refresh(u)
+    return {
+        "id": u.id, "email": u.email, "username": u.username,
+        "full_name": u.full_name, "role": u.role, "is_active": u.is_active,
+        "is_admin": u.is_admin,
+        "created_at": u.created_at.isoformat() if u.created_at else None,
     }

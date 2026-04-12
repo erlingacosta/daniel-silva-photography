@@ -85,6 +85,17 @@ export default function UsersPage() {
     }
   }
 
+  const handleReactivateUser = async (userId: number) => {
+    try {
+      const res = await adminApi.patch(`/admin/users/${userId}/activate`)
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: true } : u))
+      if (selectedUser?.id === userId) setSelectedUser(res.data)
+    } catch (err) {
+      setError('Error reactivating user')
+      console.error(err)
+    }
+  }
+
   if (loading) return <div className="min-h-screen bg-slate-900 text-white p-8"><p className="text-center">Loading users...</p></div>
 
   return (
@@ -170,7 +181,10 @@ export default function UsersPage() {
                   <div><p className="text-slate-400 text-sm">Created</p><p className="text-white text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</p></div>
                   <div className="pt-4 space-y-2">
                     <button onClick={() => setIsEditing(true)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors">Edit User</button>
-                    {selectedUser.is_active && <button onClick={() => handleDeactivateUser(selectedUser.id)} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors">Deactivate</button>}
+                    {selectedUser.is_active
+                      ? <button onClick={() => handleDeactivateUser(selectedUser.id)} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors">Deactivate</button>
+                      : <button onClick={() => handleReactivateUser(selectedUser.id)} className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded transition-colors">Reactivate</button>
+                    }
                   </div>
                 </div>
               ) : (
