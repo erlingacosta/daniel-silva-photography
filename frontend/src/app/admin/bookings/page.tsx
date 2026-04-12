@@ -174,6 +174,11 @@ export default function AdminBookingsPage() {
     })
   }
 
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—'
+    return dateStr.split('T')[0]
+  }
+
   if (loading) return <div className="p-8 text-gray-500">Loading bookings...</div>
 
   const inputCls = "w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -278,7 +283,7 @@ export default function AdminBookingsPage() {
                   </td>
                   <td className="px-3 py-3 text-gray-600">{b.package_name || '—'}</td>
                   <td className="px-3 py-3 text-gray-600 whitespace-nowrap">
-                    {b.event_date ? new Date(b.event_date).toLocaleDateString() : '—'}
+                    {formatDate(b.event_date)}
                   </td>
                   <td className="px-3 py-3 text-gray-600">{b.event_type || '—'}</td>
                   <td className="px-3 py-3 text-gray-600">{b.event_location || '—'}</td>

@@ -141,6 +141,11 @@ export default function AdminInquiriesPage() {
     }
   }
 
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—'
+    return dateStr.split('T')[0]
+  }
+
   if (loading) return <div className="p-8 text-gray-500">Loading inquiries...</div>
 
   return (
@@ -172,7 +177,7 @@ export default function AdminInquiriesPage() {
                 <td className="px-4 py-3 text-gray-600">{inq.email}</td>
                 <td className="px-4 py-3 text-gray-600">{inq.phone || '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{inq.event_type || '—'}</td>
-                <td className="px-4 py-3 text-gray-600">{inq.event_date || '—'}</td>
+                <td className="px-4 py-3 text-gray-600">{formatDate(inq.event_date)}</td>
                 <td className="px-4 py-3 text-gray-600 max-w-xs">
                   <span title={inq.message}>{inq.message ? inq.message.slice(0, 60) + (inq.message.length > 60 ? '…' : '') : '—'}</span>
                 </td>
@@ -182,7 +187,7 @@ export default function AdminInquiriesPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                  {inq.created_at ? new Date(inq.created_at).toLocaleDateString() : '—'}
+                  {formatDate(inq.created_at)}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
