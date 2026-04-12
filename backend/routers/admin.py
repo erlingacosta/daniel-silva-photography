@@ -11,7 +11,7 @@ from database import get_db
 from models import (
     Booking, User, Inquiry, Invoice, ServicePackage,
     ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Portfolio,
-    Message, ClientGallery
+    Message, ClientGallery, Testimonial
 )
 from spaces import upload_to_spaces
 from routers.auth import get_current_user
@@ -574,6 +574,20 @@ async def get_client(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
+    # Get messages for this client
+    messages = db.query(Message).filter(Message.sender_id == id).order_by(Message.created_at.asc()).all()
+    messages_list = [
+        {
+            "id": m.id,
+            "content": m.content or "",
+            "sender_id": m.sender_id,
+            "sender_name": db.query(User).filter(User.id == m.sender_id).first().full_name if m.sender_id else "",
+            "is_read": m.is_read if m.is_read is not None else False,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in messages
+    ]
+
     return {
         "id": client.id,
         "email": client.email or "",
@@ -581,7 +595,8 @@ async def get_client(
         "phone": client.phone or "",
         "role": client.role or "",
         "created_at": client.created_at.isoformat() if client.created_at else None,
-        "booking": _booking_dict(client.bookings[0]) if client.bookings else None
+        "booking": _booking_dict(client.bookings[0]) if client.bookings else None,
+        "messages": messages_list
     }
 
 
@@ -609,7 +624,15 @@ async def create_client_message(
     db.commit()
     db.refresh(message)
 
-    return {"message": "Message created"}
+    # Return the full message object so frontend can add it to state
+    return {
+        "id": message.id,
+        "content": message.content or "",
+        "sender_id": message.sender_id,
+        "sender_name": current_user.full_name or current_user.username or "",
+        "is_read": message.is_read if message.is_read is not None else False,
+        "created_at": message.created_at.isoformat() if message.created_at else None,
+    }
 
 
 @router.post("/gallery/upload")
@@ -1101,16 +1124,20 @@ async def admin_update_featured_in(
     current_user = await get_current_user(authorization, db)
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+
     item = db.query(FeaturedIn).filter(FeaturedIn.id == id).first()
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(status_code=404, detail="Featured In item not found")
+
     for field, val in data.dict(exclude_unset=True).items():
         setattr(item, field, val)
+
     db.commit()
     db.refresh(item)
     return {
         "id": item.id, "name": item.name, "logo_url": item.logo_url,
         "url": item.url, "is_active": item.is_active, "order": item.order,
+        "created_at": item.created_at.isoformat() if item.created_at else None,
     }
 
 
@@ -1123,9 +1150,11 @@ async def admin_delete_featured_in(
     current_user = await get_current_user(authorization, db)
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+
     item = db.query(FeaturedIn).filter(FeaturedIn.id == id).first()
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(status_code=404, detail="Featured In item not found")
+
     db.delete(item)
     db.commit()
     return {"message": "Deleted"}
@@ -1134,9 +1163,6 @@ async def admin_delete_featured_in(
 # ---------------------------------------------------------------------------
 # Testimonials (admin)
 # ---------------------------------------------------------------------------
-
-from models import Testimonial as TestimonialModel
-
 
 class TestimonialAdminCreate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1147,6 +1173,9 @@ class TestimonialAdminCreate(BaseModel):
     image_url: Optional[str] = ""
     order: Optional[int] = 0
     is_approved: Optional[bool] = True
+
+
+TestimonialModel = Testimonial
 
 
 @router.get("/testimonials")
