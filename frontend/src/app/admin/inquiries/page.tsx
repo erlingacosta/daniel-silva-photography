@@ -218,32 +218,28 @@ export default function AdminInquiriesPage() {
 
       {/* Convert to Booking Modal */}
       {selectedInquiry && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">Convert to Booking</h2>
-              <button onClick={() => setSelectedInquiry(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <h2 className="text-xl font-bold text-gray-900">Convert to Booking</h2>
+              <button onClick={() => setSelectedInquiry(null)} className="text-gray-500 hover:text-gray-800 text-2xl font-light">×</button>
             </div>
-            <div className="px-6 py-4 grid grid-cols-2 gap-4">
+            <div className="px-6 py-5 grid grid-cols-2 gap-4">
+              {([
+                ['Client Name', 'client_name', 'text'],
+                ['Client Email', 'client_email', 'text'],
+                ['Client Phone', 'client_phone', 'text'],
+              ] as const).map(([label, key, type]) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <input type={type} value={(modal as any)[key]} onChange={e => setModal(m => ({...m, [key]: e.target.value}))}
+                    className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              ))}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Client Name</label>
-                <input value={modal.client_name} onChange={e => setModal(m => ({...m, client_name: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Client Email</label>
-                <input value={modal.client_email} onChange={e => setModal(m => ({...m, client_email: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Client Phone</label>
-                <input value={modal.client_phone} onChange={e => setModal(m => ({...m, client_phone: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Package</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Package</label>
                 <select value={modal.package_id} onChange={e => setModal(m => ({...m, package_id: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select package...</option>
                   {packages.map(p => (
                     <option key={p.id} value={p.id}>{p.name} — ${p.price?.toLocaleString()}</option>
@@ -251,53 +247,58 @@ export default function AdminInquiriesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Event Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Event Date</label>
                 <input type="date" value={modal.event_date} onChange={e => setModal(m => ({...m, event_date: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Event Type</label>
-                <input value={modal.event_type} onChange={e => setModal(m => ({...m, event_type: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+                <select value={modal.event_type} onChange={e => setModal(m => ({...m, event_type: e.target.value}))}
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Select type...</option>
+                  {['Wedding','Quinceañera','Corporate Event','Portrait Session','Family Session','Other'].map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Event Location</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Event Location</label>
                 <input value={modal.event_location} onChange={e => setModal(m => ({...m, event_location: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Total Price ($)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
                 <input type="number" value={modal.total_price} onChange={e => setModal(m => ({...m, total_price: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Deposit Amount ($)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deposit Amount ($)</label>
                 <input type="number" value={modal.deposit_amount} onChange={e => setModal(m => ({...m, deposit_amount: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Deposit Due Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deposit Due Date</label>
                 <input type="date" value={modal.deposit_due_date} onChange={e => setModal(m => ({...m, deposit_due_date: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Contract Notes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contract Notes</label>
                 <textarea rows={2} value={modal.contract_notes} onChange={e => setModal(m => ({...m, contract_notes: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Internal Notes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Internal Notes</label>
                 <textarea rows={2} value={modal.internal_notes} onChange={e => setModal(m => ({...m, internal_notes: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  className="w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button onClick={() => setSelectedInquiry(null)}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg">
+                className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">
                 Cancel
               </button>
               <button onClick={submitConvert} disabled={submitting}
-                className="px-5 py-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium disabled:opacity-50">
+                className="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50">
                 {submitting ? 'Creating...' : 'Create Booking'}
               </button>
             </div>

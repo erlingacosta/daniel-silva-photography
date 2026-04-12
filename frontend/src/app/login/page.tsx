@@ -33,12 +33,19 @@ export default function LoginPage() {
         email: data.email,
         password: data.password,
       })
-      const { access_token, user } = res.data
+      const { access_token, user, must_reset_password } = res.data
       localStorage.setItem('djs_token', access_token)
+      localStorage.setItem('client_token', access_token)
       localStorage.setItem('djs_user', JSON.stringify(user))
-      // Redirect to admin dashboard on successful login with a small delay for localStorage to sync
+      // Redirect based on role and password reset flag
       setTimeout(() => {
-        window.location.href = '/admin'
+        if (must_reset_password) {
+          window.location.href = '/client/reset-password'
+        } else if (user?.is_admin || user?.role === 'admin') {
+          window.location.href = '/admin'
+        } else {
+          window.location.href = '/client'
+        }
       }, 100)
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

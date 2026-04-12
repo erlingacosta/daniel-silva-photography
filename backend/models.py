@@ -20,6 +20,8 @@ class User(Base):
     phone = Column(String, nullable=True)
     profile_image = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
+    must_reset_password = Column(Boolean, default=False, nullable=True)
+    temp_password = Column(String, nullable=True)
 
     bookings = relationship("Booking", back_populates="client")
 

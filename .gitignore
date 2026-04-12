@@ -68,3 +68,4 @@ temp/
 postgres_data/
 !frontend/src/lib/
 !frontend/src/lib/**
+.aider*

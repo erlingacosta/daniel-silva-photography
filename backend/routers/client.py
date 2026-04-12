@@ -158,3 +158,32 @@ async def get_client_gallery(
         }
         for p in photos
     ]
+
+
+# ---------------------------------------------------------------------------
+# Password change (after forced reset)
+# ---------------------------------------------------------------------------
+
+from passlib.context import CryptContext as _CryptContext
+_pwd_context = _CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+class ChangePasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    new_password: Optional[str] = None
+
+
+@router.post("/client/change-password")
+async def change_password(
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not data.new_password or len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    current_user.hashed_password = _pwd_context.hash(data.new_password)
+    current_user.must_reset_password = False
+    current_user.temp_password = None
+    db.commit()
+    return {"message": "Password updated successfully"}

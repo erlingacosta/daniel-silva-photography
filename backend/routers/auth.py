@@ -141,6 +141,7 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     return {
         "access_token": access_token,
         "token_type": "bearer",
+        "must_reset_password": bool(getattr(user, 'must_reset_password', False)),
         "user": UserResponse.model_validate(user)
     }
 

@@ -673,3 +673,78 @@ async def delete_gallery_image(
     db.commit()
 
     return {"message": "Image deleted"}
+
+
+# ---------------------------------------------------------------------------
+# Client info update + password reset
+# ---------------------------------------------------------------------------
+
+class UpdateClientRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[str] = None
+    is_admin: Optional[bool] = None
+
+
+@router.put("/clients/{client_id}/info")
+async def update_client_info(
+    client_id: int,
+    data: UpdateClientRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user = db.query(User).filter(User.id == client_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    if data.full_name is not None: user.full_name = data.full_name
+    if data.email is not None: user.email = data.email
+    if data.phone is not None: user.phone = data.phone
+    if data.role is not None:
+        user.role = data.role
+        user.is_admin = (data.role == "admin")
+    if data.is_admin is not None: user.is_admin = data.is_admin
+
+    db.commit()
+    db.refresh(user)
+    return {
+        "id": user.id,
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone": user.phone,
+        "role": user.role,
+        "is_admin": user.is_admin,
+    }
+
+
+@router.post("/clients/{client_id}/reset-password")
+async def admin_reset_client_password(
+    client_id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user = db.query(User).filter(User.id == client_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    import secrets
+    temp_pw = "Temp" + secrets.token_urlsafe(8) + "!"
+    user.hashed_password = pwd_context.hash(temp_pw)
+    user.temp_password = temp_pw
+    user.must_reset_password = True
+    db.commit()
+
+    return {
+        "temp_password": temp_pw,
+        "message": f"Temporary password set for {user.email}. Client will be prompted to change it on next login.",
+    }

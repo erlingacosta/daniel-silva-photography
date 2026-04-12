@@ -176,60 +176,68 @@ export default function AdminBookingsPage() {
 
   if (loading) return <div className="p-8 text-gray-500">Loading bookings...</div>
 
+  const inputCls = "w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  const labelCls = "block text-sm font-medium text-gray-700 mb-1"
+
   const FormFields = ({ values, onChange }: { values: typeof emptyForm, onChange: (f: typeof emptyForm) => void }) => (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
-        <label className="block text-xs font-medium text-gray-600 mb-1">Client Email *</label>
+        <label className={labelCls}>Client Email *</label>
         <input value={values.client_email} onChange={e => onChange({...values, client_email: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="client@example.com" />
+          className={inputCls} placeholder="client@example.com" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Package</label>
+        <label className={labelCls}>Package</label>
         <select value={values.package_id} onChange={e => onChange({...values, package_id: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          className={inputCls}>
           <option value="">Select...</option>
           {packages.map(p => <option key={p.id} value={p.id}>{p.name} — ${p.price?.toLocaleString()}</option>)}
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Event Date</label>
+        <label className={labelCls}>Event Date</label>
         <input type="date" value={values.event_date} onChange={e => onChange({...values, event_date: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          className={inputCls} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Event Type</label>
-        <input value={values.event_type} onChange={e => onChange({...values, event_type: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Wedding" />
+        <label className={labelCls}>Event Type</label>
+        <select value={values.event_type} onChange={e => onChange({...values, event_type: e.target.value})}
+          className={inputCls}>
+          <option value="">Select type...</option>
+          {['Wedding','Quinceañera','Corporate Event','Portrait Session','Family Session','Other'].map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Event Location</label>
+        <label className={labelCls}>Event Location</label>
         <input value={values.event_location} onChange={e => onChange({...values, event_location: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          className={inputCls} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Total Price ($)</label>
+        <label className={labelCls}>Total Price ($)</label>
         <input type="number" value={values.total_price} onChange={e => onChange({...values, total_price: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          className={inputCls} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Deposit Amount ($)</label>
+        <label className={labelCls}>Deposit Amount ($)</label>
         <input type="number" value={values.deposit_amount} onChange={e => onChange({...values, deposit_amount: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          className={inputCls} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Deposit Due Date</label>
+        <label className={labelCls}>Deposit Due Date</label>
         <input type="date" value={values.deposit_due_date} onChange={e => onChange({...values, deposit_due_date: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          className={inputCls} />
       </div>
       <div className="col-span-2">
-        <label className="block text-xs font-medium text-gray-600 mb-1">Contract Notes</label>
+        <label className={labelCls}>Contract Notes</label>
         <textarea rows={2} value={values.contract_notes} onChange={e => onChange({...values, contract_notes: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          className={inputCls} />
       </div>
       <div className="col-span-2">
-        <label className="block text-xs font-medium text-gray-600 mb-1">Internal Notes</label>
+        <label className={labelCls}>Internal Notes</label>
         <textarea rows={2} value={values.internal_notes} onChange={e => onChange({...values, internal_notes: e.target.value})}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          className={inputCls} />
       </div>
     </div>
   )
@@ -336,20 +344,20 @@ export default function AdminBookingsPage() {
 
       {/* Create Booking Modal */}
       {createOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">Create Booking</h2>
-              <button onClick={() => setCreateOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <h2 className="text-xl font-bold text-gray-900">Create Booking</h2>
+              <button onClick={() => setCreateOpen(false)} className="text-gray-500 hover:text-gray-800 text-2xl font-light">×</button>
             </div>
-            <div className="px-6 py-4">
+            <div className="px-6 py-5">
               <FormFields values={form} onChange={setForm} />
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button onClick={() => setCreateOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg">Cancel</button>
+                className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">Cancel</button>
               <button onClick={createBooking} disabled={submitting}
-                className="px-5 py-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium disabled:opacity-50">
+                className="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50">
                 {submitting ? 'Creating...' : 'Create Booking'}
               </button>
             </div>
@@ -359,20 +367,20 @@ export default function AdminBookingsPage() {
 
       {/* Edit Booking Modal */}
       {editBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">Edit Booking</h2>
-              <button onClick={() => setEditBooking(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <h2 className="text-xl font-bold text-gray-900">Edit Booking</h2>
+              <button onClick={() => setEditBooking(null)} className="text-gray-500 hover:text-gray-800 text-2xl font-light">×</button>
             </div>
-            <div className="px-6 py-4">
+            <div className="px-6 py-5">
               <FormFields values={editForm} onChange={setEditForm} />
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button onClick={() => setEditBooking(null)}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg">Cancel</button>
+                className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium">Cancel</button>
               <button onClick={saveEdit} disabled={submitting}
-                className="px-5 py-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium disabled:opacity-50">
+                className="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50">
                 {submitting ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
