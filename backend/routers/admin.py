@@ -1923,3 +1923,20 @@ async def admin_delete_testimonial(
     db.delete(t)
     db.commit()
     return {"message": "Deleted"}
+
+
+@router.patch("/contact/{id}/read")
+async def admin_toggle_contact_read(
+    id: int,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    msg = db.query(ContactMessage).filter(ContactMessage.id == id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.status = "unread" if msg.status == "read" else "read"
+    db.commit()
+    return {"message": "Status toggled", "status": msg.status}
