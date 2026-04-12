@@ -83,10 +83,12 @@ export default function AdminClientsPage() {
                   {c.booking?.event_date ? new Date(c.booking.event_date).toLocaleDateString() : '—'}
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/admin/clients/${c.id}`}
-                    className="px-3 py-1.5 text-xs bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium">
-                    View
-                  </Link>
+                  {c.id ? (
+                    <Link href={`/admin/clients/${c.id}`}
+                      className="px-3 py-1.5 text-xs bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium">
+                      View
+                    </Link>
+                  ) : null}
                 </td>
               </tr>
             ))}
