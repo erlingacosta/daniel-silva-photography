@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Optional
 
 from database import get_db, engine, SessionLocal
-from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Message, ClientGallery
+from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Message, ClientGallery, AboutSettings
 from routers import auth, admin
 from routers import client as client_router
 from db_seed import seed_database as run_seed_database

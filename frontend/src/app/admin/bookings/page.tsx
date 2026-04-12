@@ -42,12 +42,20 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const STATUSES = ['pending', 'confirmed', 'deposit_paid', 'in_progress', 'completed', 'cancelled']
+const EVENT_TYPES = ['Wedding', 'Quinceañera', 'Corporate Event', 'Portrait Session', 'Family Session', 'Other']
 
 const emptyForm = {
   client_email: '', package_id: '', event_date: '', event_type: '',
   event_location: '', total_price: '', deposit_amount: '', deposit_due_date: '',
   contract_notes: '', internal_notes: '',
 }
+
+// Helper: strip time portion so date inputs get yyyy-MM-dd
+const formatDate = (d: string | null | undefined): string =>
+  d ? String(d).split('T')[0].split(' ')[0] : ''
+
+const inputCls = "w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+const labelCls = "block text-sm font-medium text-gray-700 mb-1"
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -163,12 +171,12 @@ export default function AdminBookingsPage() {
     setEditForm({
       client_email: b.client_email || '',
       package_id: b.package_id?.toString() || '',
-      event_date: b.event_date ? b.event_date.split('T')[0] : '',
+      event_date: formatDate(b.event_date),
       event_type: b.event_type || '',
       event_location: b.event_location || '',
       total_price: b.total_price?.toString() || '',
       deposit_amount: b.deposit_amount?.toString() || '',
-      deposit_due_date: b.deposit_due_date || '',
+      deposit_due_date: formatDate(b.deposit_due_date),
       contract_notes: b.contract_notes || '',
       internal_notes: b.internal_notes || '',
     })
@@ -176,68 +184,108 @@ export default function AdminBookingsPage() {
 
   if (loading) return <div className="p-8 text-gray-500">Loading bookings...</div>
 
-  const inputCls = "w-full border border-gray-400 rounded-lg px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-  const labelCls = "block text-sm font-medium text-gray-700 mb-1"
-
-  const FormFields = ({ values, onChange }: { values: typeof emptyForm, onChange: (f: typeof emptyForm) => void }) => (
+  // Inline form fields to avoid React re-mounting on render (was causing single-char input bug)
+  const renderFormFields = (
+    values: typeof emptyForm,
+    onChange: (f: typeof emptyForm) => void
+  ) => (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
         <label className={labelCls}>Client Email *</label>
-        <input value={values.client_email} onChange={e => onChange({...values, client_email: e.target.value})}
-          className={inputCls} placeholder="client@example.com" />
+        <input
+          value={values.client_email}
+          onChange={e => onChange({ ...values, client_email: e.target.value })}
+          className={inputCls}
+          placeholder="client@example.com"
+        />
       </div>
       <div>
         <label className={labelCls}>Package</label>
-        <select value={values.package_id} onChange={e => onChange({...values, package_id: e.target.value})}
-          className={inputCls}>
+        <select
+          value={values.package_id}
+          onChange={e => onChange({ ...values, package_id: e.target.value })}
+          className={inputCls}
+        >
           <option value="">Select...</option>
-          {packages.map(p => <option key={p.id} value={p.id}>{p.name} — ${p.price?.toLocaleString()}</option>)}
+          {packages.map(p => (
+            <option key={p.id} value={p.id}>{p.name} — ${p.price?.toLocaleString()}</option>
+          ))}
         </select>
       </div>
       <div>
         <label className={labelCls}>Event Date</label>
-        <input type="date" value={values.event_date} onChange={e => onChange({...values, event_date: e.target.value})}
-          className={inputCls} />
+        <input
+          type="date"
+          value={values.event_date}
+          onChange={e => onChange({ ...values, event_date: e.target.value })}
+          className={inputCls}
+        />
       </div>
       <div>
         <label className={labelCls}>Event Type</label>
-        <select value={values.event_type} onChange={e => onChange({...values, event_type: e.target.value})}
-          className={inputCls}>
+        <select
+          value={values.event_type}
+          onChange={e => onChange({ ...values, event_type: e.target.value })}
+          className={inputCls}
+        >
           <option value="">Select type...</option>
-          {['Wedding','Quinceañera','Corporate Event','Portrait Session','Family Session','Other'].map(t => (
+          {EVENT_TYPES.map(t => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
       </div>
       <div>
         <label className={labelCls}>Event Location</label>
-        <input value={values.event_location} onChange={e => onChange({...values, event_location: e.target.value})}
-          className={inputCls} />
+        <input
+          value={values.event_location}
+          onChange={e => onChange({ ...values, event_location: e.target.value })}
+          className={inputCls}
+        />
       </div>
       <div>
         <label className={labelCls}>Total Price ($)</label>
-        <input type="number" value={values.total_price} onChange={e => onChange({...values, total_price: e.target.value})}
-          className={inputCls} />
+        <input
+          type="number"
+          value={values.total_price}
+          onChange={e => onChange({ ...values, total_price: e.target.value })}
+          className={inputCls}
+        />
       </div>
       <div>
         <label className={labelCls}>Deposit Amount ($)</label>
-        <input type="number" value={values.deposit_amount} onChange={e => onChange({...values, deposit_amount: e.target.value})}
-          className={inputCls} />
+        <input
+          type="number"
+          value={values.deposit_amount}
+          onChange={e => onChange({ ...values, deposit_amount: e.target.value })}
+          className={inputCls}
+        />
       </div>
       <div>
         <label className={labelCls}>Deposit Due Date</label>
-        <input type="date" value={values.deposit_due_date} onChange={e => onChange({...values, deposit_due_date: e.target.value})}
-          className={inputCls} />
+        <input
+          type="date"
+          value={values.deposit_due_date}
+          onChange={e => onChange({ ...values, deposit_due_date: e.target.value })}
+          className={inputCls}
+        />
       </div>
       <div className="col-span-2">
         <label className={labelCls}>Contract Notes</label>
-        <textarea rows={2} value={values.contract_notes} onChange={e => onChange({...values, contract_notes: e.target.value})}
-          className={inputCls} />
+        <textarea
+          rows={2}
+          value={values.contract_notes}
+          onChange={e => onChange({ ...values, contract_notes: e.target.value })}
+          className={inputCls}
+        />
       </div>
       <div className="col-span-2">
         <label className={labelCls}>Internal Notes</label>
-        <textarea rows={2} value={values.internal_notes} onChange={e => onChange({...values, internal_notes: e.target.value})}
-          className={inputCls} />
+        <textarea
+          rows={2}
+          value={values.internal_notes}
+          onChange={e => onChange({ ...values, internal_notes: e.target.value })}
+          className={inputCls}
+        />
       </div>
     </div>
   )
@@ -246,8 +294,10 @@ export default function AdminBookingsPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-        <button onClick={() => setCreateOpen(true)}
-          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium">
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium"
+        >
           + Create Booking
         </button>
       </div>
@@ -260,7 +310,7 @@ export default function AdminBookingsPage() {
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {['Client','Package','Event Date','Type','Location','Status','Price','Deposit','Actions'].map(h => (
+              {['Client', 'Package', 'Event Date', 'Type', 'Location', 'Status', 'Price', 'Deposit', 'Actions'].map(h => (
                 <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -278,14 +328,16 @@ export default function AdminBookingsPage() {
                   </td>
                   <td className="px-3 py-3 text-gray-600">{b.package_name || '—'}</td>
                   <td className="px-3 py-3 text-gray-600 whitespace-nowrap">
-                    {b.event_date ? new Date(b.event_date).toLocaleDateString() : '—'}
+                    {formatDate(b.event_date) || '—'}
                   </td>
                   <td className="px-3 py-3 text-gray-600">{b.event_type || '—'}</td>
                   <td className="px-3 py-3 text-gray-600">{b.event_location || '—'}</td>
                   <td className="px-3 py-3">
-                    <select value={b.status}
+                    <select
+                      value={b.status}
                       onChange={e => updateStatus(b.id, e.target.value)}
-                      className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLORS[b.status] || 'bg-gray-100'}`}>
+                      className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLORS[b.status] || 'bg-gray-100'}`}
+                    >
                       {STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
                     </select>
                   </td>
@@ -323,9 +375,13 @@ export default function AdminBookingsPage() {
                   <tr key={`notes-${b.id}`} className="bg-gray-50">
                     <td colSpan={9} className="px-4 py-3">
                       <div className="flex gap-2 items-end">
-                        <textarea rows={3} value={notesDraft} onChange={e => setNotesDraft(e.target.value)}
+                        <textarea
+                          rows={3}
+                          value={notesDraft}
+                          onChange={e => setNotesDraft(e.target.value)}
                           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                          placeholder="Internal notes..." />
+                          placeholder="Internal notes..."
+                        />
                         <div className="flex flex-col gap-1">
                           <button onClick={() => saveNotes(b.id)}
                             className="px-3 py-1.5 text-xs bg-yellow-500 hover:bg-yellow-600 text-white rounded">Save</button>
@@ -351,7 +407,7 @@ export default function AdminBookingsPage() {
               <button onClick={() => setCreateOpen(false)} className="text-gray-500 hover:text-gray-800 text-2xl font-light">×</button>
             </div>
             <div className="px-6 py-5">
-              <FormFields values={form} onChange={setForm} />
+              {renderFormFields(form, setForm)}
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button onClick={() => setCreateOpen(false)}
@@ -374,7 +430,7 @@ export default function AdminBookingsPage() {
               <button onClick={() => setEditBooking(null)} className="text-gray-500 hover:text-gray-800 text-2xl font-light">×</button>
             </div>
             <div className="px-6 py-5">
-              <FormFields values={editForm} onChange={setEditForm} />
+              {renderFormFields(editForm, setEditForm)}
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button onClick={() => setEditBooking(null)}

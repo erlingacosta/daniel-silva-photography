@@ -37,7 +37,7 @@ export default function ContactPage() {
 
   const handleToggleStatus = async (msg: ContactMessage) => {
     try {
-      const res = await adminApi.patch(`/admin/contact/${msg.id}/status`)
+      const res = await adminApi.patch(`/admin/contact/${msg.id}/read`)
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: res.data.status } : m))
       if (selectedMessage?.id === msg.id) setSelectedMessage(prev => prev ? { ...prev, status: res.data.status } : null)
     } catch (err) { console.error(err) }
