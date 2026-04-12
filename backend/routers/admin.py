@@ -621,7 +621,14 @@ async def create_client_message(
     db.commit()
     db.refresh(message)
 
-    return {"message": "Message created"}
+    return {
+        "id": message.id,
+        "content": message.content,
+        "sender_id": message.sender_id,
+        "sender_name": current_user.full_name or current_user.email or "Admin",
+        "is_read": message.is_read,
+        "created_at": message.created_at.isoformat() if message.created_at else None,
+    }
 
 
 @router.post("/gallery/upload")
@@ -722,15 +729,23 @@ async def update_client_info(
         raise HTTPException(status_code=404, detail="Client not found")
 
     if data.full_name is not None: user.full_name = data.full_name
-    if data.email is not None: user.email = data.email
+    if data.email is not None:
+        existing = db.query(User).filter(User.email == data.email, User.id != client_id).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Email already in use by another account")
+        user.email = data.email
     if data.phone is not None: user.phone = data.phone
     if data.role is not None:
         user.role = data.role
         user.is_admin = (data.role == "admin")
     if data.is_admin is not None: user.is_admin = data.is_admin
 
-    db.commit()
-    db.refresh(user)
+    try:
+        db.commit()
+        db.refresh(user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     return {
         "id": user.id,
         "full_name": user.full_name,
