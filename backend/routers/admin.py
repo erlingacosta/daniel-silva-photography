@@ -729,10 +729,10 @@ async def update_client_info(
         raise HTTPException(status_code=404, detail="Client not found")
 
     if data.full_name is not None: user.full_name = data.full_name
-    if data.email is not None:
+    if data.email is not None and data.email != user.email:
         existing = db.query(User).filter(User.email == data.email, User.id != client_id).first()
         if existing:
-            raise HTTPException(status_code=409, detail="Email already in use by another account")
+            raise HTTPException(status_code=400, detail="Email already in use")
         user.email = data.email
     if data.phone is not None: user.phone = data.phone
     if data.role is not None:
@@ -879,3 +879,321 @@ async def admin_update_about(data: dict, authorization: str = Header(None), db: 
     return {"id": about.id, "photographer_name": about.photographer_name, "bio": about.bio,
             "photo_url": about.photo_url, "events_photographed": about.events_photographed,
             "years_experience": about.years_experience, "client_satisfaction": about.client_satisfaction}
+
+
+# --- Contact Messages Admin ---
+@router.get("/contact")
+async def admin_get_contact(authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    msgs = db.query(ContactMessage).order_by(ContactMessage.created_at.desc()).all()
+    return [{"id": m.id, "name": m.name, "email": m.email, "phone": m.phone,
+             "message": m.message, "is_read": m.is_read,
+             "created_at": m.created_at.isoformat() if m.created_at else None} for m in msgs]
+
+@router.patch("/contact/{msg_id}/read")
+async def admin_mark_contact_read(msg_id: int, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    msg = db.query(ContactMessage).filter(ContactMessage.id == msg_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_read = True
+    db.commit()
+    return {"id": msg.id, "is_read": True}
+
+@router.delete("/contact/{msg_id}")
+async def admin_delete_contact(msg_id: int, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    msg = db.query(ContactMessage).filter(ContactMessage.id == msg_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    db.delete(msg)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# --- FAQ Admin ---
+class FaqCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    order: Optional[int] = 0
+    is_active: Optional[bool] = True
+
+@router.get("/faq")
+async def admin_get_faq(authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    items = db.query(FaqItem).order_by(FaqItem.order, FaqItem.id).all()
+    return [{"id": f.id, "question": f.question, "answer": f.answer,
+             "order": f.order, "is_active": f.is_active,
+             "created_at": f.created_at.isoformat() if f.created_at else None} for f in items]
+
+@router.post("/faq")
+async def admin_create_faq(data: FaqCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = FaqItem(question=data.question or "", answer=data.answer or "",
+                   order=data.order or 0, is_active=data.is_active if data.is_active is not None else True)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "question": item.question, "answer": item.answer,
+            "order": item.order, "is_active": item.is_active}
+
+@router.put("/faq/{faq_id}")
+async def admin_update_faq(faq_id: int, data: FaqCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = db.query(FaqItem).filter(FaqItem.id == faq_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    if data.question is not None: item.question = data.question
+    if data.answer is not None: item.answer = data.answer
+    if data.order is not None: item.order = data.order
+    if data.is_active is not None: item.is_active = data.is_active
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "question": item.question, "answer": item.answer,
+            "order": item.order, "is_active": item.is_active}
+
+@router.delete("/faq/{faq_id}")
+async def admin_delete_faq(faq_id: int, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = db.query(FaqItem).filter(FaqItem.id == faq_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    db.delete(item)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# --- Portfolio Admin ---
+class PortfolioCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = "Weddings"
+    image_url: Optional[str] = None
+    order: Optional[int] = 0
+
+@router.get("/portfolio")
+async def admin_get_portfolio(authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    items = db.query(Portfolio).order_by(Portfolio.order, Portfolio.id).all()
+    return [{"id": p.id, "title": p.title, "description": p.description,
+             "category": p.category, "image_url": p.image_url,
+             "order": getattr(p, 'order', 0),
+             "created_at": p.created_at.isoformat() if p.created_at else None} for p in items]
+
+@router.post("/portfolio")
+async def admin_create_portfolio(data: PortfolioCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = Portfolio(title=data.title or "", description=data.description,
+                     category=data.category or "Weddings", image_url=data.image_url or "")
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "title": item.title, "description": item.description,
+            "category": item.category, "image_url": item.image_url}
+
+@router.put("/portfolio/{item_id}")
+async def admin_update_portfolio(item_id: int, data: PortfolioCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = db.query(Portfolio).filter(Portfolio.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    if data.title is not None: item.title = data.title
+    if data.description is not None: item.description = data.description
+    if data.category is not None: item.category = data.category
+    if data.image_url is not None: item.image_url = data.image_url
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "title": item.title, "description": item.description,
+            "category": item.category, "image_url": item.image_url}
+
+@router.delete("/portfolio/{item_id}")
+async def admin_delete_portfolio(item_id: int, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    item = db.query(Portfolio).filter(Portfolio.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+    db.delete(item)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# --- A La Carte Services Admin ---
+class ServiceCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    is_active: Optional[bool] = True
+
+@router.get("/services")
+async def admin_get_services(authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    items = db.query(AlaCarteService).order_by(AlaCarteService.id).all()
+    return [{"id": s.id, "name": s.name, "description": s.description,
+             "price": s.price, "is_active": s.is_active,
+             "created_at": s.created_at.isoformat() if s.created_at else None} for s in items]
+
+@router.post("/services")
+async def admin_create_service(data: ServiceCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    svc = AlaCarteService(name=data.name or "", description=data.description,
+                          price=data.price or 0.0,
+                          is_active=data.is_active if data.is_active is not None else True)
+    db.add(svc)
+    db.commit()
+    db.refresh(svc)
+    return {"id": svc.id, "name": svc.name, "description": svc.description,
+            "price": svc.price, "is_active": svc.is_active}
+
+@router.put("/services/{svc_id}")
+async def admin_update_service(svc_id: int, data: ServiceCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    svc = db.query(AlaCarteService).filter(AlaCarteService.id == svc_id).first()
+    if not svc:
+        raise HTTPException(status_code=404, detail="Service not found")
+    if data.name is not None: svc.name = data.name
+    if data.description is not None: svc.description = data.description
+    if data.price is not None: svc.price = data.price
+    if data.is_active is not None: svc.is_active = data.is_active
+    db.commit()
+    db.refresh(svc)
+    return {"id": svc.id, "name": svc.name, "description": svc.description,
+            "price": svc.price, "is_active": svc.is_active}
+
+@router.delete("/services/{svc_id}")
+async def admin_delete_service(svc_id: int, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    svc = db.query(AlaCarteService).filter(AlaCarteService.id == svc_id).first()
+    if not svc:
+        raise HTTPException(status_code=404, detail="Service not found")
+    db.delete(svc)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# --- Users Admin ---
+class AdminUserCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[str] = "client"
+    password: Optional[str] = None
+
+class AdminUserUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@router.get("/users")
+async def admin_get_users(authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [{"id": u.id, "email": u.email, "full_name": u.full_name, "phone": u.phone,
+             "role": u.role, "is_active": u.is_active, "is_admin": u.is_admin,
+             "created_at": u.created_at.isoformat() if u.created_at else None} for u in users]
+
+@router.post("/users")
+async def admin_create_user(data: AdminUserCreate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already exists")
+    import secrets as _secrets
+    raw_pw = data.password or _secrets.token_urlsafe(12)
+    base_username = (data.email or "user").split("@")[0]
+    username = base_username
+    counter = 1
+    while db.query(User).filter(User.username == username).first():
+        username = f"{base_username}{counter}"
+        counter += 1
+    user = User(
+        email=data.email, username=username,
+        full_name=data.full_name or "", phone=data.phone or "",
+        hashed_password=pwd_context.hash(raw_pw),
+        is_active=True, is_admin=(data.role == "admin"),
+        role=data.role or "client"
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"id": user.id, "email": user.email, "full_name": user.full_name,
+            "phone": user.phone, "role": user.role, "is_active": user.is_active,
+            "temp_password": raw_pw if not data.password else None}
+
+@router.put("/users/{user_id}")
+async def admin_update_user(user_id: int, data: AdminUserUpdate, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if data.email is not None and data.email != user.email:
+        existing = db.query(User).filter(User.email == data.email, User.id != user_id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user.email = data.email
+    if data.full_name is not None: user.full_name = data.full_name
+    if data.phone is not None: user.phone = data.phone
+    if data.role is not None:
+        user.role = data.role
+        user.is_admin = (data.role == "admin")
+    if data.is_active is not None: user.is_active = data.is_active
+    db.commit()
+    db.refresh(user)
+    return {"id": user.id, "email": user.email, "full_name": user.full_name,
+            "phone": user.phone, "role": user.role, "is_active": user.is_active}
+
+@router.delete("/users/{user_id}")
+async def admin_delete_user(user_id: int, authorization: str = Header(None), db: Session = Depends(get_db)):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}
