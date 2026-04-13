@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Optional
 
 from database import get_db, engine, SessionLocal
-from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Message, ClientGallery, AboutSettings
+from models import Base, Portfolio, Testimonial, ServicePackage, Booking, User, Inquiry, NewsletterSubscriber, ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Message, ClientGallery, AboutSettings, HeroSettings
 from routers import auth, admin
 from routers import client as client_router
 from db_seed import seed_database as run_seed_database
@@ -413,6 +413,14 @@ def get_featured_in(db: Session = Depends(get_db)):
         {"id": f.id, "name": f.name, "logo_url": f.logo_url, "url": f.url}
         for f in featured
     ]
+
+# Hero Settings endpoints (public)
+@app.get("/hero")
+def get_hero(db: Session = Depends(get_db)):
+    hero = db.query(HeroSettings).first()
+    if not hero:
+        return {"video_url": "/videos/05_hero_luxury_montage.mp4"}
+    return {"id": hero.id, "video_url": hero.video_url or "/videos/05_hero_luxury_montage.mp4"}
 
 # Upload endpoint - Spaces (both /upload and /api/upload)
 @app.post("/upload")

@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
+  const [videoSrc, setVideoSrc] = useState('/videos/05_hero_luxury_montage.mp4')
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -17,10 +18,30 @@ export default function Hero() {
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
 
   useEffect(() => {
+    // Fetch hero video URL from API
+    const fetchHeroVideo = async () => {
+      try {
+        const res = await fetch('/api/hero')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.video_url) {
+            setVideoSrc(data.video_url)
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch hero video:', e)
+        // Fall back to default
+        setVideoSrc('/videos/05_hero_luxury_montage.mp4')
+      }
+    }
+    fetchHeroVideo()
+  }, [])
+
+  useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch(() => {})
     }
-  }, [])
+  }, [videoSrc])
 
   return (
     <section ref={sectionRef} className="hero">
@@ -34,7 +55,7 @@ export default function Hero() {
           playsInline
           className="w-full h-full object-cover"
         >
-          <source src="/videos/05_hero_luxury_montage.mp4" type="video/mp4" />
+          <source src={videoSrc} type="video/mp4" />
         </video>
       </motion.div>
 

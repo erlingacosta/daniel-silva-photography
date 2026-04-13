@@ -11,7 +11,7 @@ from database import get_db
 from models import (
     Booking, User, Inquiry, Invoice, ServicePackage,
     ContactMessage, FaqItem, AlaCarteService, FeaturedIn, Portfolio,
-    Message, ClientGallery, Testimonial
+    Message, ClientGallery, Testimonial, HeroSettings
 )
 from spaces import upload_to_spaces
 from routers.auth import get_current_user
@@ -1292,3 +1292,95 @@ async def admin_delete_testimonial(
     db.delete(t)
     db.commit()
     return {"message": "Deleted"}
+
+
+# ---------------------------------------------------------------------------
+# Hero Settings (admin)
+# ---------------------------------------------------------------------------
+
+class HeroUploadRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    video_url: Optional[str] = None
+
+
+@router.get("/hero")
+async def admin_get_hero(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    hero = db.query(HeroSettings).first()
+    if not hero:
+        return {"video_url": "/videos/05_hero_luxury_montage.mp4"}
+    
+    return {
+        "id": hero.id,
+        "video_url": hero.video_url or "/videos/05_hero_luxury_montage.mp4",
+        "updated_at": hero.updated_at.isoformat() if hero.updated_at else None,
+    }
+
+
+@router.post("/hero/upload")
+async def admin_upload_hero_video(
+    file: UploadFile = File(...),
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Upload to DigitalOcean Spaces under videos/ folder
+    url = await upload_to_spaces(file, folder='videos')
+    
+    # Update or create hero settings
+    hero = db.query(HeroSettings).first()
+    if not hero:
+        hero = HeroSettings(video_url=url)
+        db.add(hero)
+    else:
+        hero.video_url = url
+        hero.updated_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(hero)
+    
+    return {
+        "id": hero.id,
+        "video_url": hero.video_url,
+        "updated_at": hero.updated_at.isoformat() if hero.updated_at else None,
+    }
+
+
+@router.post("/hero")
+async def admin_update_hero(
+    data: HeroUploadRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    current_user = await get_current_user(authorization, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not data.video_url:
+        raise HTTPException(status_code=400, detail="video_url is required")
+    
+    hero = db.query(HeroSettings).first()
+    if not hero:
+        hero = HeroSettings(video_url=data.video_url)
+        db.add(hero)
+    else:
+        hero.video_url = data.video_url
+        hero.updated_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(hero)
+    
+    return {
+        "id": hero.id,
+        "video_url": hero.video_url,
+        "updated_at": hero.updated_at.isoformat() if hero.updated_at else None,
+    }

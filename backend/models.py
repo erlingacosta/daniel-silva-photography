@@ -217,3 +217,11 @@ class AboutSettings(Base):
     years_experience = Column(Integer, default=15)
     client_satisfaction = Column(Integer, default=100)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class HeroSettings(Base):
+    __tablename__ = "hero_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    video_url = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)

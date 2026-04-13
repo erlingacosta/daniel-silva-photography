@@ -7,6 +7,7 @@ import Link from 'next/link'
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: '▪' },
   { href: '/admin/portfolio', label: 'Portfolio', icon: '◈' },
+  { href: '/admin/hero', label: 'Hero Settings', icon: '▶' },
   { href: '/admin/about', label: 'About', icon: '◉' },
   { href: '/admin/bookings', label: 'Bookings', icon: '◷' },
   { href: '/admin/inquiries', label: 'Inquiries', icon: '◈' },
