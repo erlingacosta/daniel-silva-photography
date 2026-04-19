@@ -104,7 +104,7 @@ export default function Pricing() {
           transition={{ duration: 0.7 }}
           className="text-center mb-4"
         >
-          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#d4af37', letterSpacing: '0.4em' }}>
+          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#c4a574', letterSpacing: '0.4em' }}>
             Investment
           </p>
           <h2 className="section-title">Pricing Packages</h2>
@@ -122,14 +122,14 @@ export default function Pricing() {
           {packages.map((pkg: PricingPackage) => (
             <motion.div key={pkg.name} variants={cardVariants} className={`pricing-card ${pkg.featured ? 'featured' : ''}`}>
               {pkg.featured && (
-                <p className="text-xs uppercase tracking-widest mb-4 font-semibold" style={{ color: '#d4af37', letterSpacing: '0.3em' }}>
+                <p className="text-xs uppercase tracking-widest mb-4 font-semibold" style={{ color: '#c4a574', letterSpacing: '0.3em' }}>
                   Most Popular
                 </p>
               )}
               <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif", color: '#f5f5f5' }}>
                 {pkg.name}
               </h3>
-              <p className="text-sm uppercase tracking-wider mb-4" style={{ color: '#d4af37', letterSpacing: '0.15em' }}>
+              <p className="text-sm uppercase tracking-wider mb-4" style={{ color: '#c4a574', letterSpacing: '0.15em' }}>
                 {pkg.duration}
               </p>
               <p className="text-4xl font-bold mb-8" style={{ fontFamily: "'Playfair Display', serif", color: '#f5f5f5' }}>
@@ -141,7 +141,7 @@ export default function Pricing() {
               <ul className="text-left mb-8 space-y-3">
                 {pkg.includes.map((item: string, index: number) => (
                   <li key={index} className="flex items-start gap-3">
-                    <span className="mt-0.5 text-sm font-bold flex-shrink-0" style={{ color: '#d4af37' }}>✓</span>
+                    <span className="mt-0.5 text-sm font-bold flex-shrink-0" style={{ color: '#c4a574' }}>✓</span>
                     <span className="text-sm" style={{ color: '#b0b0b0' }}>{item}</span>
                   </li>
                 ))}
@@ -173,7 +173,7 @@ export default function Pricing() {
                     <span className="text-sm font-semibold" style={{ color: '#b0b0b0' }}>{service.name}</span>
                     {service.description && <p className="text-xs" style={{ color: '#666' }}>{service.description}</p>}
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: '#d4af37' }}>${service.price}</span>
+                  <span className="text-sm font-semibold" style={{ color: '#c4a574' }}>${service.price}</span>
                 </li>
               ))
             ) : (
@@ -186,7 +186,7 @@ export default function Pricing() {
               ].map(([name, price]) => (
                 <li key={name} className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)' }}>
                   <span className="text-sm" style={{ color: '#b0b0b0' }}>{name}</span>
-                  <span className="text-sm font-semibold" style={{ color: '#d4af37' }}>{price}</span>
+                  <span className="text-sm font-semibold" style={{ color: '#c4a574' }}>{price}</span>
                 </li>
               ))
             )}

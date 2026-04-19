@@ -70,7 +70,7 @@ export default function About() {
         >
           <p
             className="text-xs uppercase tracking-widest mb-4"
-            style={{ color: '#d4af37', letterSpacing: '0.3em' }}
+            style={{ color: '#c4a574', letterSpacing: '0.3em' }}
           >
             Our Story
           </p>
@@ -82,7 +82,7 @@ export default function About() {
           </h2>
           <div
             className="w-16 h-1 mx-auto"
-            style={{ backgroundColor: '#d4af37' }}
+            style={{ backgroundColor: '#c4a574' }}
           />
         </motion.div>
 
@@ -98,7 +98,7 @@ export default function About() {
                 src={about.photo_url}
                 alt={about.photographer_name || 'Photographer'}
                 className="w-full h-96 object-cover rounded-lg"
-                style={{ borderLeft: '4px solid #d4af37' }}
+                style={{ borderLeft: '4px solid #c4a574' }}
               />
             )}
           </motion.div>
@@ -125,7 +125,7 @@ export default function About() {
                 >
                   <p
                     className="text-4xl font-bold mb-2"
-                    style={{ color: '#d4af37' }}
+                    style={{ color: '#c4a574' }}
                   >
                     {about.events_photographed || 500}+
                   </p>
@@ -143,7 +143,7 @@ export default function About() {
                 >
                   <p
                     className="text-4xl font-bold mb-2"
-                    style={{ color: '#d4af37' }}
+                    style={{ color: '#c4a574' }}
                   >
                     {about.years_experience || 15}+
                   </p>
@@ -161,7 +161,7 @@ export default function About() {
                 >
                   <p
                     className="text-4xl font-bold mb-2"
-                    style={{ color: '#d4af37' }}
+                    style={{ color: '#c4a574' }}
                   >
                     {about.client_satisfaction || 100}%
                   </p>

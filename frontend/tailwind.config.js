@@ -8,15 +8,21 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Luxury dark theme
+        // Elegant pastel palette
         'dark-primary': '#0f0f0f',
         'dark-secondary': '#1a1a1a',
         'dark-card': '#2a2a2a',
-        'gold-primary': '#d4af37',
-        'gold-secondary': '#c9a961',
+        'camel': '#c4a574',
+        'camel-accent': '#d4a574',
+        'camel-deep': '#b89560',
+        'beige': '#f5f1e8',
+        'ivory': '#fafaf8',
+        // Legacy aliases (mapped to new palette)
+        'gold-primary': '#c4a574',
+        'gold-secondary': '#b89560',
         'text-primary': '#f5f5f5',
         'text-secondary': '#b0b0b0',
-        gold: '#d4af37',
+        gold: '#c4a574',
         navy: '#1a1a2e',
         dark: '#0f0f0f',
       },

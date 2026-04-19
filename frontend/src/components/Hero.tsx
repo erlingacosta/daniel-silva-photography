@@ -71,7 +71,7 @@ export default function Hero() {
             animate={{ opacity: 1, letterSpacing: '0.5em' }}
             transition={{ duration: 1.2, delay: 0.3 }}
             className="text-xs md:text-sm uppercase tracking-widest text-gold-primary mb-6 font-light"
-            style={{ color: '#d4af37' }}
+            style={{ color: '#c4a574' }}
           >
             Premium Photography
           </motion.p>
@@ -86,7 +86,7 @@ export default function Hero() {
           >
             Daniel Silva
             <br />
-            <span style={{ color: '#d4af37' }}>Photography</span>
+            <span style={{ color: '#c4a574' }}>Photography</span>
           </motion.h1>
 
           {/* Divider */}
@@ -95,7 +95,7 @@ export default function Hero() {
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.8, delay: 1.2 }}
             className="w-24 h-px mx-auto mb-8"
-            style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }}
+            style={{ background: 'linear-gradient(90deg, transparent, #c4a574, transparent)' }}
           />
 
           {/* Subtitle */}
@@ -133,14 +133,14 @@ export default function Hero() {
         transition={{ delay: 2.5, duration: 1 }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
       >
-        <p className="text-xs uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.7)' }}>
+        <p className="text-xs uppercase tracking-widest" style={{ color: 'rgba(196,165,116,0.7)' }}>
           Scroll
         </p>
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
           className="w-px h-12"
-          style={{ background: 'linear-gradient(to bottom, #d4af37, transparent)' }}
+          style={{ background: 'linear-gradient(to bottom, #c4a574, transparent)' }}
         />
       </motion.div>
     </section>

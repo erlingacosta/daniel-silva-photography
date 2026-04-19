@@ -81,7 +81,7 @@ export default function Newsletter() {
         transition={{ duration: 0.7 }}
         className="max-w-2xl mx-auto px-6 text-center"
       >
-        <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#d4af37', letterSpacing: '0.4em' }}>
+        <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#c4a574', letterSpacing: '0.4em' }}>
           Stay Connected
         </p>
         <h2
@@ -113,7 +113,7 @@ export default function Newsletter() {
             disabled={loading}
             className="px-8 py-3 rounded text-sm font-semibold transition-all duration-300 disabled:opacity-50"
             style={{
-              background: 'linear-gradient(135deg, #d4af37, #c9a961)',
+              background: 'linear-gradient(135deg, #c4a574, #c4a574)',
               color: '#0f0f0f',
               border: 'none',
               whiteSpace: 'nowrap',
@@ -128,7 +128,7 @@ export default function Newsletter() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-4 text-sm"
-            style={{ color: success ? '#d4af37' : '#ff6b6b' }}
+            style={{ color: success ? '#c4a574' : '#ff6b6b' }}
           >
             {message}
           </motion.p>

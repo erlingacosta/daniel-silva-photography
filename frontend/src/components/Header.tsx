@@ -33,7 +33,7 @@ export default function Header() {
       style={{
         backgroundColor: scrolled ? 'rgba(10, 10, 10, 0.97)' : 'rgba(0, 0, 0, 0.25)',
         backdropFilter: scrolled ? 'blur(16px)' : 'blur(4px)',
-        borderBottom: scrolled ? '1px solid rgba(212, 175, 55, 0.15)' : '1px solid transparent',
+        borderBottom: scrolled ? '1px solid rgba(196, 165, 116, 0.15)' : '1px solid transparent',
       }}
     >
       <nav className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -50,7 +50,7 @@ export default function Header() {
               href={link.href}
               className="text-sm font-medium tracking-wider uppercase transition-colors duration-200 hover:text-gold-primary"
               style={{ color: 'rgba(245,245,245,0.8)', letterSpacing: '0.08em' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
               onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(245,245,245,0.8)')}
             >
               {link.label}
@@ -63,7 +63,7 @@ export default function Header() {
             href="/login"
             className="text-sm font-medium tracking-wider uppercase transition-colors duration-200"
             style={{ color: 'rgba(245,245,245,0.6)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(245,245,245,0.6)')}
           >
             Login
@@ -79,17 +79,17 @@ export default function Header() {
           <motion.div
             animate={mobileMenuOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
             className="w-6 h-px bg-gold-primary"
-            style={{ backgroundColor: '#d4af37' }}
+            style={{ backgroundColor: '#c4a574' }}
           />
           <motion.div
             animate={mobileMenuOpen ? { opacity: 0 } : { opacity: 1 }}
             className="w-6 h-px"
-            style={{ backgroundColor: '#d4af37' }}
+            style={{ backgroundColor: '#c4a574' }}
           />
           <motion.div
             animate={mobileMenuOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
             className="w-6 h-px"
-            style={{ backgroundColor: '#d4af37' }}
+            style={{ backgroundColor: '#c4a574' }}
           />
         </button>
       </nav>
@@ -105,7 +105,7 @@ export default function Header() {
             className="md:hidden overflow-hidden"
             style={{
               backgroundColor: 'rgba(10, 10, 10, 0.98)',
-              borderTop: '1px solid rgba(212, 175, 55, 0.2)',
+              borderTop: '1px solid rgba(196, 165, 116, 0.2)',
             }}
           >
             <div className="px-6 py-6 flex flex-col gap-5">

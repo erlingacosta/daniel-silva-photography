@@ -81,7 +81,7 @@ export default function FAQ() {
           transition={{ duration: 0.7 }}
           className="text-center mb-4"
         >
-          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#d4af37', letterSpacing: '0.4em' }}>
+          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#c4a574', letterSpacing: '0.4em' }}>
             Questions
           </p>
           <h2 className="section-title">FAQ</h2>
@@ -113,7 +113,7 @@ export default function FAQ() {
                   animate={{ rotate: openId === item.id ? 45 : 0 }}
                   transition={{ duration: 0.3 }}
                   className="flex-shrink-0 text-xl font-light"
-                  style={{ color: '#d4af37' }}
+                  style={{ color: '#c4a574' }}
                 >
                   +
                 </motion.span>

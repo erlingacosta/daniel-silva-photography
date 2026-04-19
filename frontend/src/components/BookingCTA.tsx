@@ -50,7 +50,7 @@ export default function BookingCTA() {
         >
           <p
             className="text-xs uppercase tracking-widest mb-4"
-            style={{ color: '#d4af37', letterSpacing: '0.4em' }}
+            style={{ color: '#c4a574', letterSpacing: '0.4em' }}
           >
             Let's Create Together
           </p>
@@ -60,10 +60,10 @@ export default function BookingCTA() {
           >
             Ready to Book
             <br />
-            <span style={{ color: '#d4af37' }}>Your Event?</span>
+            <span style={{ color: '#c4a574' }}>Your Event?</span>
           </h2>
 
-          <div className="w-16 h-px mx-auto my-8" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+          <div className="w-16 h-px mx-auto my-8" style={{ background: 'linear-gradient(90deg, transparent, #c4a574, transparent)' }} />
 
           <p className="text-lg mb-12 max-w-2xl mx-auto font-light" style={{ color: '#b0b0b0' }}>
             Let's create stunning memories together. Get in touch to check availability
@@ -97,7 +97,7 @@ export default function BookingCTA() {
                 border: '1px solid rgba(212,175,55,0.15)',
               }}
             >
-              <p className="text-2xl mb-3" style={{ color: '#d4af37' }}>{info.icon}</p>
+              <p className="text-2xl mb-3" style={{ color: '#c4a574' }}>{info.icon}</p>
               <p className="text-xs uppercase tracking-widest mb-2" style={{ color: '#777777', letterSpacing: '0.15em' }}>
                 {info.label}
               </p>
@@ -105,14 +105,14 @@ export default function BookingCTA() {
                 <a
                   href={info.href}
                   className="text-sm font-medium transition-colors duration-200"
-                  style={{ color: '#d4af37' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#f0d060')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = '#d4af37')}
+                  style={{ color: '#c4a574' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#d4a574')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = '#c4a574')}
                 >
                   {info.value}
                 </a>
               ) : (
-                <p className="text-sm font-medium" style={{ color: '#d4af37' }}>{info.value}</p>
+                <p className="text-sm font-medium" style={{ color: '#c4a574' }}>{info.value}</p>
               )}
             </div>
           ))}

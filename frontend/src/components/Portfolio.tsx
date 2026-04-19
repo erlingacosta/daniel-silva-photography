@@ -88,7 +88,7 @@ function CinematicCard({ item, onClick }: { item: PortfolioItem; onClick: () => 
       >
         <span
           className="text-xs uppercase tracking-widest mb-2"
-          style={{ color: '#d4af37', letterSpacing: '0.2em' }}
+          style={{ color: '#c4a574', letterSpacing: '0.2em' }}
         >
           {item.category}
         </span>
@@ -151,7 +151,7 @@ export default function Portfolio() {
           transition={{ duration: 0.7 }}
           className="text-center mb-4"
         >
-          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#d4af37', letterSpacing: '0.4em' }}>
+          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#c4a574', letterSpacing: '0.4em' }}>
             Our Work
           </p>
           <h2 className="section-title">Portfolio</h2>
@@ -171,7 +171,7 @@ export default function Portfolio() {
               onClick={() => setActiveCategory(service)}
               className="px-6 py-2 rounded text-sm uppercase tracking-wider transition-all duration-300"
               style={{
-                backgroundColor: activeCategory === service ? '#d4af37' : 'transparent',
+                backgroundColor: activeCategory === service ? '#c4a574' : 'transparent',
                 color: activeCategory === service ? '#0f0f0f' : 'rgba(212,175,55,0.8)',
                 border: '1px solid rgba(212,175,55,0.5)',
                 letterSpacing: '0.08em',
@@ -220,7 +220,7 @@ export default function Portfolio() {
                 onClick={() => setLightboxOpen(false)}
                 className="absolute top-4 right-4 text-2xl font-light transition-colors duration-200"
                 style={{ color: 'rgba(255,255,255,0.7)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
               >
                 ✕

@@ -77,13 +77,13 @@ export default function QuinceañeraGallery() {
           onClick={prevImage}
           className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 transition-colors duration-200"
           style={{
-            backgroundColor: 'rgba(212, 175, 55, 0.2)',
-            color: '#d4af37',
-            border: '1px solid rgba(212, 175, 55, 0.4)',
+            backgroundColor: 'rgba(196, 165, 116, 0.2)',
+            color: '#c4a574',
+            border: '1px solid rgba(196, 165, 116, 0.4)',
             borderRadius: '1px',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.4)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.2)')}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(196, 165, 116, 0.4)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(196, 165, 116, 0.2)')}
           aria-label="Previous image"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -97,13 +97,13 @@ export default function QuinceañeraGallery() {
           onClick={nextImage}
           className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 transition-colors duration-200"
           style={{
-            backgroundColor: 'rgba(212, 175, 55, 0.2)',
-            color: '#d4af37',
-            border: '1px solid rgba(212, 175, 55, 0.4)',
+            backgroundColor: 'rgba(196, 165, 116, 0.2)',
+            color: '#c4a574',
+            border: '1px solid rgba(196, 165, 116, 0.4)',
             borderRadius: '1px',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.4)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.2)')}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(196, 165, 116, 0.4)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(196, 165, 116, 0.2)')}
           aria-label="Next image"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -122,7 +122,7 @@ export default function QuinceañeraGallery() {
             whileTap={{ scale: 0.95 }}
             className="relative w-16 h-16 overflow-hidden border transition-all duration-200"
             style={{
-              borderColor: index === currentIndex ? '#d4af37' : 'rgba(212, 175, 55, 0.3)',
+              borderColor: index === currentIndex ? '#c4a574' : 'rgba(196, 165, 116, 0.3)',
               borderWidth: index === currentIndex ? '2px' : '1px',
             }}
             aria-label={`Go to image ${index + 1}`}

@@ -49,7 +49,7 @@ export default function Testimonials() {
           transition={{ duration: 0.7 }}
           className="text-center mb-4"
         >
-          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#d4af37', letterSpacing: '0.4em' }}>
+          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#c4a574', letterSpacing: '0.4em' }}>
             Client Stories
           </p>
           <h2 className="section-title">Testimonials</h2>
@@ -78,7 +78,7 @@ export default function Testimonials() {
               {/* Stars */}
               <div className="flex gap-1 mb-6">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <span key={i} style={{ color: '#d4af37' }}>★</span>
+                  <span key={i} style={{ color: '#c4a574' }}>★</span>
                 ))}
               </div>
 
@@ -96,7 +96,7 @@ export default function Testimonials() {
                 style={{ borderTop: '1px solid rgba(212,175,55,0.15)' }}
               >
                 <p className="font-semibold" style={{ color: '#f5f5f5' }}>{testimonial.name}</p>
-                <p className="text-xs uppercase tracking-wider mt-1" style={{ color: '#d4af37', letterSpacing: '0.15em' }}>
+                <p className="text-xs uppercase tracking-wider mt-1" style={{ color: '#c4a574', letterSpacing: '0.15em' }}>
                   {testimonial.service}
                 </p>
               </div>
@@ -118,7 +118,7 @@ export default function Testimonials() {
         >
           <p
             className="text-xs uppercase tracking-widest mb-4"
-            style={{ color: '#d4af37', letterSpacing: '0.4em' }}
+            style={{ color: '#c4a574', letterSpacing: '0.4em' }}
           >
             As Featured In
           </p>

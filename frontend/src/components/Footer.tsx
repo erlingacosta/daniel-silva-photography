@@ -26,7 +26,7 @@ export default function Footer() {
                 href={siteConfig.social.instagram}
                 className="text-xs uppercase tracking-wider transition-colors duration-200"
                 style={{ color: 'rgba(212,175,55,0.6)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(212,175,55,0.6)')}
                 aria-label="Instagram"
               >
@@ -36,7 +36,7 @@ export default function Footer() {
                 href={siteConfig.social.facebook}
                 className="text-xs uppercase tracking-wider transition-colors duration-200"
                 style={{ color: 'rgba(212,175,55,0.6)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(212,175,55,0.6)')}
                 aria-label="Facebook"
               >
@@ -47,7 +47,7 @@ export default function Footer() {
 
           {/* Services */}
           <div>
-            <h4 className="text-xs uppercase tracking-widest mb-5 font-semibold" style={{ color: '#d4af37', letterSpacing: '0.2em' }}>
+            <h4 className="text-xs uppercase tracking-widest mb-5 font-semibold" style={{ color: '#c4a574', letterSpacing: '0.2em' }}>
               Services
             </h4>
             <ul className="space-y-3">
@@ -57,7 +57,7 @@ export default function Footer() {
                     href="#portfolio"
                     className="text-sm transition-colors duration-200"
                     style={{ color: '#666666' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
                     onMouseLeave={(e) => (e.currentTarget.style.color = '#666666')}
                   >
                     {service}
@@ -69,7 +69,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-xs uppercase tracking-widest mb-5 font-semibold" style={{ color: '#d4af37', letterSpacing: '0.2em' }}>
+            <h4 className="text-xs uppercase tracking-widest mb-5 font-semibold" style={{ color: '#c4a574', letterSpacing: '0.2em' }}>
               Quick Links
             </h4>
             <ul className="space-y-3">
@@ -84,7 +84,7 @@ export default function Footer() {
                     href={link.href}
                     className="text-sm transition-colors duration-200"
                     style={{ color: '#666666' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
                     onMouseLeave={(e) => (e.currentTarget.style.color = '#666666')}
                   >
                     {link.label}
@@ -96,14 +96,14 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-xs uppercase tracking-widest mb-5 font-semibold" style={{ color: '#d4af37', letterSpacing: '0.2em' }}>
+            <h4 className="text-xs uppercase tracking-widest mb-5 font-semibold" style={{ color: '#c4a574', letterSpacing: '0.2em' }}>
               Contact
             </h4>
             <a
               href={`mailto:${siteConfig.contact.email}`}
               className="text-sm block mb-2 transition-colors duration-200"
               style={{ color: '#666666' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
               onMouseLeave={(e) => (e.currentTarget.style.color = '#666666')}
             >
               {siteConfig.contact.email}
@@ -112,7 +112,7 @@ export default function Footer() {
               href={`tel:${siteConfig.contact.phone.replace(/\D/g, '')}`}
               className="text-sm block transition-colors duration-200"
               style={{ color: '#666666' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#d4af37')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#c4a574')}
               onMouseLeave={(e) => (e.currentTarget.style.color = '#666666')}
             >
               {siteConfig.contact.phone}
