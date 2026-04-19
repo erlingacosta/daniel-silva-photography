@@ -7,7 +7,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
-  const [videoSrc, setVideoSrc] = useState('/videos/05_hero_luxury_montage.mp4')
+  const [videoSrc, setVideoSrc] = useState('/videos/ea7efcdd91d440ffb3528c90da4c19da.mp4')
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -31,7 +31,7 @@ export default function Hero() {
       } catch (e) {
         console.error('Failed to fetch hero video:', e)
         // Fall back to default
-        setVideoSrc('/videos/05_hero_luxury_montage.mp4')
+        setVideoSrc('/videos/ea7efcdd91d440ffb3528c90da4c19da.mp4')
       }
     }
     fetchHeroVideo()
